@@ -681,7 +681,7 @@ async function modalNext() {
     mStep = 2; showMStep(2);
     document.getElementById('aiLoading').style.display = 'block';
     document.getElementById('aiLoading').classList.add('show');
-    var priLabel = mPri === 'lo' ? 'low' : mPri === 'mi' ? 'medium' : 'high';
+    var priLabel = mPri === 'lo' ? 'low' : mPri === 'mi' ? 'normal' : 'high';
     var pLabel = mPri === 'lo' ? '🟢 一般' : mPri === 'mi' ? '🟡 較急' : '🔴 緊急';
     var p = allProjects.find(function(x) { return x.id === mProjId; });
 
@@ -693,6 +693,27 @@ async function modalNext() {
         description: descText, priority: priLabel, status: 'pending'
       }).select('id').single();
       if (crData) crId = crData.id;
+    }
+
+    // 通知 Edge Function → 報價生成 + Telegram 通報
+    if (crId && curUser && p) {
+      try {
+        await fetch('https://dnpnjcjzwxrhopqvyluz.supabase.co/functions/v1/devstudio-webhook', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'submit_change_request',
+            cr_id: crId,
+            client_name: curUser.name,
+            client_email: curUser.email,
+            project_id: mProjId,
+            project_title: p.title || '',
+            change_type: mType,
+            description: descText,
+            priority: priLabel
+          })
+        });
+      } catch(e) { /* 非阻塞，失敗不影響前台流程 */ }
     }
 
     var code = '// Claude Code 修改指令\n// 專案：'+(p?p.title:'')+'\n// 類型：'+mType+
