@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DevStudio 會員後台</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --blue:#2563eb;--blue-d:#1d4ed8;--cyan:#0891b2;--indigo:#4f46e5;
+  --green:#059669;--amber:#d97706;--red:#dc2626;
+  --text:#0f172a;--text2:#475569;--text3:#94a3b8;
+  --white:#fff;--gray50:#f8fafc;--gray100:#f1f5f9;--gray200:#e2e8f0;
+  --r:10px;--rl:16px;
+  --sh:0 1px 3px rgba(0,0,0,.08),0 4px 16px rgba(0,0,0,.06);
+  --sh-b:0 8px 32px rgba(37,99,235,.15);
+}
+html,body{height:100%;font-family:'Segoe UI',system-ui,sans-serif;background:var(--gray50);color:var(--text);line-height:1.6}
+
+/* ── 路由頁面 ── */
+.route{display:none;min-height:100vh}
+.route.active{display:flex}
+
+/* ══ 登入頁 ══ */
+#route-login{align-items:center;justify-content:center;background:linear-gradient(135deg,#eff6ff,#f0f9ff,#ecfeff);position:relative;overflow:hidden}
+#route-login::before{content:'';position:absolute;top:-100px;right:-100px;width:500px;height:500px;background:radial-gradient(circle,rgba(37,99,235,.08),transparent 65%);pointer-events:none}
+.login-card{background:var(--white);border:1px solid var(--gray200);border-radius:24px;padding:2.5rem 2rem;width:100%;max-width:400px;box-shadow:0 8px 40px rgba(37,99,235,.1);position:relative;z-index:1}
+.login-logo{text-align:center;margin-bottom:1.75rem}
+.logo-text{font-size:1.3rem;font-weight:800;color:var(--blue)}
+.logo-text span{color:var(--cyan)}
+.login-logo p{font-size:.85rem;color:var(--text2);margin-top:.3rem}
+.social-btns{display:flex;flex-direction:column;gap:.65rem;margin-bottom:1.25rem}
+.social-btn{display:flex;align-items:center;justify-content:center;gap:.6rem;padding:.75rem;border-radius:10px;border:1.5px solid var(--gray200);background:var(--white);font-size:.9rem;font-weight:600;cursor:pointer;transition:all .15s}
+.social-btn:hover{border-color:var(--blue);background:#f0f6ff}
+.social-btn .sicon{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.85rem;font-weight:700;flex-shrink:0}
+.social-btn.google .sicon{background:#fff;border:1px solid #e0e0e0;color:#4285f4}
+.social-btn.line .sicon{background:#06C755;color:#fff}
+.divider-row{display:flex;align-items:center;gap:.75rem;margin:1rem 0;color:var(--text3);font-size:.8rem}
+.divider-row::before,.divider-row::after{content:'';flex:1;height:1px;background:var(--gray200)}
+.fg{margin-bottom:.9rem}
+label{display:block;font-size:.82rem;font-weight:600;color:var(--text2);margin-bottom:.3rem}
+input[type=text],input[type=email],input[type=password],textarea,select{width:100%;background:var(--gray50);border:1.5px solid var(--gray200);color:var(--text);border-radius:8px;padding:.65rem .9rem;font-size:.9rem;font-family:inherit;outline:none;transition:border-color .15s}
+input:focus,textarea:focus,select:focus{border-color:var(--blue);background:var(--white);box-shadow:0 0 0 3px rgba(37,99,235,.08)}
+.btn-full{width:100%;background:var(--blue);color:#fff;border:none;padding:.8rem;border-radius:10px;font-size:.95rem;font-weight:700;cursor:pointer;transition:background .15s}
+.btn-full:hover{background:var(--indigo)}
+.login-hint{background:var(--gray50);border:1px solid var(--gray200);border-radius:10px;padding:.85rem 1rem;margin-top:1rem;font-size:.78rem;color:var(--text2)}
+.login-hint strong{display:block;color:var(--text);margin-bottom:.35rem;font-size:.8rem}
+.login-hint code{background:var(--gray100);padding:.1rem .4rem;border-radius:4px;font-family:monospace;font-size:.78rem;color:var(--blue)}
+.dev-note{background:#fef9c3;border:1px solid #fde047;border-radius:8px;padding:.5rem .75rem;font-size:.72rem;color:#713f12;margin-top:.75rem;text-align:center}
+.err-msg{background:#fee2e2;border:1px solid #fca5a5;color:#dc2626;border-radius:8px;padding:.55rem .8rem;font-size:.82rem;margin-bottom:.75rem;display:none}
+
+/* ══ 後台 Layout ══ */
+#route-dashboard{flex-direction:column}
+.dash-wrap{display:flex;flex:1;min-height:100vh}
+
+/* 側邊欄 */
+.sidebar{width:240px;background:var(--white);border-right:1px solid var(--gray200);display:flex;flex-direction:column;flex-shrink:0;position:fixed;top:0;left:0;height:100vh;z-index:50}
+.sidebar-logo{padding:1.25rem 1.25rem 1rem;border-bottom:1px solid var(--gray200)}
+.user-row{display:flex;align-items:center;gap:.5rem;margin-top:.75rem}
+.avatar{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--blue),var(--cyan));display:flex;align-items:center;justify-content:center;color:#fff;font-size:.8rem;font-weight:700;flex-shrink:0}
+.user-name{font-size:.85rem;font-weight:600}
+.user-email{font-size:.72rem;color:var(--text3)}
+.sidebar-nav{flex:1;padding:.75rem 0;overflow-y:auto}
+.nav-group{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);padding:.5rem 1.25rem .25rem}
+.nav-item{display:flex;align-items:center;gap:.6rem;padding:.6rem 1.25rem;cursor:pointer;transition:background .15s;font-size:.88rem;color:var(--text2);font-weight:500;border-left:3px solid transparent;user-select:none}
+.nav-item:hover{background:var(--gray50);color:var(--text)}
+.nav-item.active{background:#eff6ff;color:var(--blue);font-weight:600;border-left-color:var(--blue)}
+.nav-item .ni{width:18px;text-align:center}
+.sidebar-foot{padding:1rem 1.25rem;border-top:1px solid var(--gray200)}
+.logout-btn{display:flex;align-items:center;gap:.5rem;font-size:.85rem;color:var(--text3);cursor:pointer;transition:color .15s}
+.logout-btn:hover{color:var(--red)}
+
+/* 主內容 */
+.main{flex:1;margin-left:240px;padding:2rem;min-height:100vh}
+
+/* URL 麵包屑 */
+.url-bar{display:flex;align-items:center;gap:.5rem;background:var(--white);border:1px solid var(--gray200);border-radius:8px;padding:.4rem .85rem;margin-bottom:1.5rem;font-size:.8rem;color:var(--text3);font-family:monospace}
+.url-bar .url-domain{color:var(--text2)}
+.url-bar .url-path{color:var(--blue);font-weight:600}
+
+/* 子頁面 */
+.view{display:none;animation:fadeIn .2s ease}
+.view.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.page-header{margin-bottom:1.75rem}
+.page-header h2{font-size:1.4rem;font-weight:800;letter-spacing:-.02em}
+.page-header p{font-size:.9rem;color:var(--text2);margin-top:.2rem}
+
+/* 統計 */
+.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1rem;margin-bottom:1.75rem}
+.stat-box{background:var(--white);border:1px solid var(--gray200);border-radius:var(--rl);padding:1.25rem;box-shadow:var(--sh)}
+.sb-num{font-size:1.8rem;font-weight:800;color:var(--blue);line-height:1}
+.sb-lbl{font-size:.8rem;color:var(--text3);margin-top:.25rem}
+.stat-box.green .sb-num{color:var(--green)}
+.stat-box.amber .sb-num{color:var(--amber)}
+
+/* 專案卡 */
+.sec-label{font-size:.8rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-bottom:.75rem}
+.projects-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1.25rem}
+.project-card{background:var(--white);border:1px solid var(--gray200);border-radius:var(--rl);overflow:hidden;box-shadow:var(--sh);transition:box-shadow .2s,transform .2s}
+.project-card:hover{box-shadow:var(--sh-b);transform:translateY(-2px)}
+.pc-thumb{height:120px;display:flex;align-items:center;justify-content:center;font-size:2.5rem;position:relative}
+.t-web{background:linear-gradient(135deg,#eff6ff,#dbeafe)}
+.t-game{background:linear-gradient(135deg,#1a0533,#4c1d95)}
+.t-app{background:linear-gradient(135deg,#ecfeff,#a5f3fc)}
+.t-sys{background:linear-gradient(135deg,#f0fdf4,#bbf7d0)}
+.pc-badge{position:absolute;top:.6rem;right:.6rem;font-size:.68rem;font-weight:700;padding:.2rem .55rem;border-radius:999px}
+.b-live{background:#d1fae5;color:#065f46}
+.b-dev{background:#dbeafe;color:#1e40af}
+.b-review{background:#fef3c7;color:#92400e}
+.pc-body{padding:1rem}
+.pc-type{font-size:.72rem;color:var(--blue);font-weight:700;text-transform:uppercase;margin-bottom:.2rem}
+.pc-name{font-size:.9rem;font-weight:700;margin-bottom:.25rem}
+.pc-url{font-size:.75rem;color:var(--text3);margin-bottom:.8rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pc-btns{display:flex;gap:.4rem}
+.btn-sm{font-size:.76rem;padding:.32rem .7rem;border-radius:7px;border:none;cursor:pointer;font-weight:600;transition:all .15s}
+.btn-blue{background:#eff6ff;color:var(--blue)}
+.btn-blue:hover{background:var(--blue);color:#fff}
+.btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--gray200)}
+.btn-ghost:hover{border-color:var(--blue);color:var(--blue)}
+
+/* 修改記錄 */
+.history-list{display:flex;flex-direction:column;gap:.75rem}
+.hi{background:var(--white);border:1px solid var(--gray200);border-radius:var(--r);padding:1rem 1.1rem;display:flex;gap:1rem;align-items:flex-start}
+.hi-ico{width:36px;height:36px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:1rem;flex-shrink:0}
+.ico-blue{background:#eff6ff}
+.ico-green{background:#d1fae5}
+.ico-amber{background:#fef3c7}
+.hi-meta{flex:1}
+.hi-title{font-size:.88rem;font-weight:600;margin-bottom:.15rem}
+.hi-proj{font-size:.75rem;color:var(--text3)}
+.hi-tag{font-size:.7rem;font-weight:700;padding:.15rem .45rem;border-radius:999px;margin-top:.3rem;display:inline-block}
+.hs-done{background:#d1fae5;color:#065f46}
+.hs-proc{background:#dbeafe;color:#1e40af}
+.hs-wait{background:#fef3c7;color:#92400e}
+.hi-date{font-size:.72rem;color:var(--text3);flex-shrink:0}
+
+/* Modal */
+.overlay{display:none;position:fixed;inset:0;background:rgba(15,23,42,.5);z-index:500;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.overlay.open{display:flex}
+.modal{background:var(--white);border-radius:20px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+.modal-head{padding:1.4rem 1.5rem 1rem;border-bottom:1px solid var(--gray200);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;background:var(--white);z-index:1}
+.modal-head h3{font-size:1rem;font-weight:700}
+.modal-head .sub{font-size:.75rem;color:var(--text3);margin-top:.1rem}
+.mc-btn{width:26px;height:26px;border-radius:6px;background:var(--gray100);border:none;cursor:pointer;font-size:.9rem;color:var(--text2)}
+.modal-body{padding:1.4rem}
+.modal-foot{padding:.9rem 1.5rem;border-top:1px solid var(--gray200);display:flex;justify-content:space-between;gap:.5rem;position:sticky;bottom:0;background:var(--white)}
+
+/* 步驟 */
+.steps{display:flex;align-items:flex-start;justify-content:center;margin-bottom:1.5rem;gap:0}
+.step-wrap{display:flex;flex-direction:column;align-items:center;gap:.25rem}
+.sdot{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.78rem;font-weight:700;transition:all .2s}
+.sdot.done{background:var(--green);color:#fff}
+.sdot.cur{background:var(--blue);color:#fff;box-shadow:0 0 0 4px rgba(37,99,235,.15)}
+.sdot.off{background:var(--gray200);color:var(--text3)}
+.sline{flex:1;height:2px;background:var(--gray200);margin:14px .3rem 0}
+.sline.done{background:var(--green)}
+.slbl{font-size:.65rem;color:var(--text3)}
+
+/* 修改類型 */
+.type-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.45rem;margin-top:.3rem}
+.type-card{border:1.5px solid var(--gray200);border-radius:9px;padding:.55rem .4rem;text-align:center;cursor:pointer;transition:all .15s;user-select:none}
+.type-card:hover{border-color:#93c5fd}
+.type-card.on{border-color:var(--blue);background:#eff6ff}
+.type-card .tci{font-size:1.1rem;margin-bottom:.2rem}
+.type-card .tcl{font-size:.7rem;font-weight:600;color:var(--text2)}
+.type-card.on .tcl{color:var(--blue)}
+.pri-row{display:flex;gap:.45rem;margin-top:.3rem}
+.pb{flex:1;padding:.4rem;border-radius:7px;border:1.5px solid var(--gray200);font-size:.76rem;font-weight:600;cursor:pointer;text-align:center;background:var(--white);transition:all .15s}
+.pb.on.lo{border-color:var(--green);background:#d1fae5;color:var(--green)}
+.pb.on.mi{border-color:var(--amber);background:#fef3c7;color:var(--amber)}
+.pb.on.hi{border-color:var(--red);background:#fee2e2;color:var(--red)}
+
+/* AI 分析 */
+.ai-loading{text-align:center;padding:1.5rem;display:none}
+.ai-loading.show{display:block}
+.spinner{width:44px;height:44px;border-radius:50%;border:3px solid var(--gray200);border-top-color:var(--blue);animation:spin .8s linear infinite;margin:0 auto .75rem}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ai-out{display:none;background:var(--gray50);border:1px solid var(--gray200);border-radius:var(--r);padding:1rem;margin-top:.75rem}
+.ai-out.show{display:block}
+.ai-ok{display:flex;align-items:center;gap:.4rem;font-size:.83rem;font-weight:700;color:var(--green);margin-bottom:.65rem}
+.code-block{background:#0f172a;border-radius:8px;padding:.85rem;font-size:.72rem;color:#7dd3fc;font-family:'Courier New',monospace;line-height:1.6;overflow-x:auto;white-space:pre-wrap;margin-bottom:.65rem}
+.tags{display:flex;flex-wrap:wrap;gap:.3rem}
+.req-tag{font-size:.7rem;background:#eff6ff;color:var(--blue);border:1px solid #bfdbfe;padding:.15rem .45rem;border-radius:5px}
+
+/* 完成畫面 */
+.done-box{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:1.25rem;text-align:center;margin-bottom:1rem}
+.summary-box{background:var(--gray50);border:1px solid var(--gray200);border-radius:var(--r);padding:.9rem;font-size:.8rem;color:var(--text2);line-height:1.8}
+
+/* 按鈕 */
+.btn-primary{background:var(--blue);color:#fff;border:none;padding:.6rem 1.3rem;border-radius:9px;font-size:.88rem;font-weight:600;cursor:pointer;transition:background .15s}
+.btn-primary:hover{background:var(--indigo)}
+.btn-secondary{background:var(--gray100);color:var(--text2);border:none;padding:.6rem 1.1rem;border-radius:9px;font-size:.88rem;cursor:pointer}
+.btn-success{background:var(--green);color:#fff;border:none;padding:.6rem 1.3rem;border-radius:9px;font-size:.88rem;font-weight:600;cursor:pointer}
+
+/* Toast */
+.toast{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--text);color:#fff;padding:.7rem 1.2rem;border-radius:10px;font-size:.85rem;font-weight:500;z-index:999;opacity:0;transform:translateY(8px);transition:all .3s;pointer-events:none;max-width:280px}
+.toast.show{opacity:1;transform:translateY(0)}
+</style>
+</head>
+<body>
+
+<!-- ══ 登入頁 ══ -->
+<div id="route-login" class="route active">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="logo-text">Dev<span>Studio</span></div>
+      <p>客戶會員後台</p>
+    </div>
+
+    <div class="err-msg" id="errMsg">⚠️ 帳號或密碼錯誤，請重試</div>
+
+    <div class="social-btns">
+      <button class="social-btn google" onclick="socialLogin('Google')">
+        <div class="sicon">G</div>使用 Google 帳號登入
+      </button>
+      <button class="social-btn line" onclick="socialLogin('Line')">
+        <div class="sicon">L</div>使用 Line 帳號登入
+      </button>
+    </div>
+
+    <div class="divider-row">或使用 Email 登入</div>
+
+    <div class="fg"><label>電子郵件</label>
+      <input type="email" id="loginEmail" placeholder="you@example.com">
+    </div>
+    <div class="fg"><label>密碼</label>
+      <input type="password" id="loginPwd" placeholder="••••••••"
+        onkeydown="if(event.key==='Enter')doLogin()">
+    </div>
+    <button class="btn-full" onclick="doLogin()">登入</button>
+    <div style="text-align:center;margin-top:.75rem">
+      <a href="#" onclick="forgotPassword();return false" style="font-size:.8rem;color:var(--blue);text-decoration:none">忘記密碼？</a>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 後台主頁 ══ -->
+<div id="route-dashboard" class="route">
+  <div class="dash-wrap">
+
+    <!-- 側邊欄 -->
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <div class="logo-text">Dev<span>Studio</span></div>
+        <div class="user-row">
+          <div class="avatar" id="av">A</div>
+          <div>
+            <div class="user-name" id="uName">使用者</div>
+            <div class="user-email" id="uEmail">-</div>
+          </div>
+        </div>
+      </div>
+      <nav class="sidebar-nav">
+        <div class="nav-group">主選單</div>
+        <div class="nav-item active" onclick="go('/dashboard')"><span class="ni">🏠</span>總覽</div>
+        <div class="nav-item" onclick="go('/projects')"><span class="ni">🗂️</span>我的專案</div>
+        <div class="nav-item" onclick="go('/history')"><span class="ni">📋</span>修改記錄</div>
+        <div class="nav-group" style="margin-top:.5rem">帳戶</div>
+        <div class="nav-item" onclick="go('/profile')"><span class="ni">👤</span>個人資料</div>
+      </nav>
+      <div class="sidebar-foot">
+        <div class="logout-btn" onclick="logout()">🚪 登出帳號</div>
+      </div>
+    </aside>
+
+    <!-- 主內容 -->
+    <main class="main">
+      <!-- URL 顯示列 -->
+      <div class="url-bar">
+        🌐 <span class="url-domain">devstudio.com</span><span style="color:var(--text3)">/member</span><span class="url-path" id="urlPath">/dashboard</span>
+      </div>
+
+      <!-- 總覽 -->
+      <div class="view active" id="v-dashboard">
+        <div class="page-header">
+          <h2 id="welcomeMsg">總覽</h2>
+          <p>以下是您的專案狀態總覽</p>
+        </div>
+        <div class="stats-row">
+          <div class="stat-box"><div class="sb-num">3</div><div class="sb-lbl">所有專案</div></div>
+          <div class="stat-box green"><div class="sb-num">2</div><div class="sb-lbl">已上線</div></div>
+          <div class="stat-box amber"><div class="sb-num">1</div><div class="sb-lbl">待確認修改</div></div>
+        </div>
+        <div class="sec-label">近期專案</div>
+        <div class="projects-grid" id="grid-overview"></div>
+      </div>
+
+      <!-- 我的專案 -->
+      <div class="view" id="v-projects">
+        <div class="page-header">
+          <h2>我的專案</h2>
+          <p>您所有已購買的網頁與開發服務</p>
+        </div>
+        <div class="projects-grid" id="grid-projects"></div>
+      </div>
+
+      <!-- 修改記錄 -->
+      <div class="view" id="v-history">
+        <div class="page-header">
+          <h2>修改記錄</h2>
+          <p>所有申請過的修改需求與處理狀態</p>
+        </div>
+        <div class="history-list" id="historyList"></div>
+      </div>
+
+      <!-- 個人資料 -->
+      <div class="view" id="v-profile">
+        <div class="page-header">
+          <h2>個人資料</h2>
+          <p>管理您的帳戶資訊</p>
+        </div>
+        <div style="background:var(--white);border:1px solid var(--gray200);border-radius:var(--rl);padding:1.75rem;max-width:460px;box-shadow:var(--sh)">
+          <div class="fg"><label>姓名</label><input type="text" id="pName"></div>
+          <div class="fg"><label>電子郵件</label><input type="email" id="pEmail" disabled style="opacity:.6"></div>
+          <div class="fg"><label>電話</label><input type="tel" id="pPhone" placeholder="0912-000-000"></div>
+          <div class="fg"><label>Line ID</label><input type="text" id="pLine" placeholder="@yourline"></div>
+          <button class="btn-primary" onclick="saveProfile()">儲存變更</button>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- ══ 申請修改 Modal ══ -->
+<div class="overlay" id="modal">
+  <div class="modal">
+    <div class="modal-head">
+      <div>
+        <h3>📝 申請修改</h3>
+        <div class="sub" id="mProjName"></div>
+      </div>
+      <button class="mc-btn" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+
+      <!-- 步驟 -->
+      <div class="steps">
+        <div class="step-wrap"><div class="sdot cur" id="sd1">1</div><div class="slbl">填寫需求</div></div>
+        <div class="sline" id="sl1"></div>
+        <div class="step-wrap"><div class="sdot off" id="sd2">2</div><div class="slbl">AI 分析</div></div>
+        <div class="sline" id="sl2"></div>
+        <div class="step-wrap"><div class="sdot off" id="sd3">3</div><div class="slbl">確認送出</div></div>
+      </div>
+
+      <!-- S1 -->
+      <div id="ms1">
+        <div class="fg">
+          <label>修改類型</label>
+          <div class="type-grid">
+            <div class="type-card" onclick="pickType(this)"><div class="tci">✏️</div><div class="tcl">文字內容</div></div>
+            <div class="type-card" onclick="pickType(this)"><div class="tci">🖼️</div><div class="tcl">圖片更換</div></div>
+            <div class="type-card" onclick="pickType(this)"><div class="tci">🎨</div><div class="tcl">版面調整</div></div>
+            <div class="type-card" onclick="pickType(this)"><div class="tci">➕</div><div class="tcl">新增功能</div></div>
+            <div class="type-card" onclick="pickType(this)"><div class="tci">🔗</div><div class="tcl">連結修改</div></div>
+            <div class="type-card" onclick="pickType(this)"><div class="tci">⚙️</div><div class="tcl">其他設定</div></div>
+          </div>
+        </div>
+        <div class="fg">
+          <label>修改說明 <span style="font-weight:400;color:var(--text3);font-size:.76rem">越詳細 AI 分析越準確</span></label>
+          <textarea id="mDesc" rows="4" placeholder="例如：把首頁標題改成「全新升級版本」，CTA 按鈕改成紅色..."></textarea>
+        </div>
+        <div class="fg">
+          <label>緊急程度</label>
+          <div class="pri-row">
+            <div class="pb lo on" onclick="pickPri(this,'lo')">🟢 一般</div>
+            <div class="pb mi" onclick="pickPri(this,'mi')">🟡 較急</div>
+            <div class="pb hi" onclick="pickPri(this,'hi')">🔴 緊急</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- S2 AI 分析 -->
+      <div id="ms2" style="display:none">
+        <div class="ai-loading" id="aiLoading">
+          <div class="spinner"></div>
+          <div style="font-size:.9rem;font-weight:600">AI 正在分析您的需求...</div>
+          <div style="font-size:.78rem;color:var(--text3);margin-top:.3rem">解析修改內容，產出 Claude Code 指令</div>
+        </div>
+        <div class="ai-out" id="aiOut">
+          <div class="ai-ok">✅ 分析完成，已產出 Claude Code 指令</div>
+          <div class="code-block" id="aiCode"></div>
+          <div style="font-size:.77rem;font-weight:600;color:var(--text2);margin-bottom:.4rem">識別到的修改項目：</div>
+          <div class="tags" id="aiTags"></div>
+          <div style="margin-top:.6rem;font-size:.7rem;color:var(--text3)">🔧 此指令將自動傳送至 Claude Code 執行</div>
+        </div>
+      </div>
+
+      <!-- S3 完成 -->
+      <div id="ms3" style="display:none">
+        <div class="done-box">
+          <div style="font-size:1.5rem;margin-bottom:.4rem">🎉</div>
+          <div style="font-size:.95rem;font-weight:700;color:#065f46;margin-bottom:.25rem">修改申請已送出！</div>
+          <div style="font-size:.8rem;color:#047857">AI 指令已轉交 Claude Code，我們將盡快處理並通知您。</div>
+        </div>
+        <div class="summary-box" id="mSummary"></div>
+      </div>
+
+    </div>
+    <div class="modal-foot" id="mFoot">
+      <button class="btn-secondary" onclick="closeModal()">取消</button>
+      <button class="btn-primary" id="mNextBtn" onclick="modalNext()">下一步 →</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toastEl"></div>
+
+<script>
+const SUPABASE_URL = 'https://dnpnjcjzwxrhopqvyluz.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRucG5qY2p6d3hyaG9wcXZ5bHV6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5NTQxMzQsImV4cCI6MjA5NTUzMDEzNH0.hbhyYGmxwVgh3kQD-v60OPQ8VlRghkJIKzQ4UPVWBAE';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+var curUser = null;
+var curRoute = '/dashboard';
+var mStep = 1, mType = '', mPri = 'lo', mProjId = null;
+var allProjects = [];
+
+// ── 路由系統 ──
+var routeMap = { '/dashboard':'v-dashboard','/projects':'v-projects','/history':'v-history','/profile':'v-profile' };
+var navMap = { '/dashboard':0,'/projects':1,'/history':2,'/profile':3 };
+
+function go(path) {
+  if (!curUser) { navigate('/login'); return; }
+  curRoute = path;
+  try { history.pushState({ path: path }, '', path); } catch(e) {}
+  document.getElementById('urlPath').textContent = path;
+  Object.values(routeMap).forEach(function(id) { document.getElementById(id).classList.remove('active'); });
+  var vid = routeMap[path];
+  if (vid) document.getElementById(vid).classList.add('active');
+  var items = document.querySelectorAll('.nav-item');
+  items.forEach(function(n) { n.classList.remove('active'); });
+  var idx = navMap[path];
+  if (idx !== undefined && items[idx]) items[idx].classList.add('active');
+}
+
+function navigate(path) {
+  if (path === '/login') {
+    document.getElementById('route-dashboard').classList.remove('active');
+    document.getElementById('route-login').classList.add('active');
+    try { history.pushState({ path: path }, '', path); } catch(e) {}
+  } else {
+    document.getElementById('route-login').classList.remove('active');
+    document.getElementById('route-dashboard').classList.add('active');
+    go(path);
+  }
+}
+
+// ── 登入 ──
+async function doLogin() {
+  var email = document.getElementById('loginEmail').value.trim();
+  var pwd = document.getElementById('loginPwd').value;
+  var errEl = document.getElementById('errMsg');
+  errEl.style.display = 'none';
+  var loginBtn = document.querySelector('.btn-full');
+  loginBtn.textContent = '登入中...'; loginBtn.disabled = true;
+  var { data, error } = await sb.auth.signInWithPassword({ email: email, password: pwd });
+  loginBtn.textContent = '登入'; loginBtn.disabled = false;
+  if (error) { errEl.style.display = 'block'; return; }
+  await afterLogin(data.user);
+}
+
+async function forgotPassword() {
+  var email = document.getElementById('loginEmail').value.trim();
+  if (!email) { toast('⚠️ 請先輸入 Email'); return; }
+  var { error } = await sb.auth.resetPasswordForEmail(email);
+  if (error) { toast('⚠️ 發送失敗：' + error.message); return; }
+  toast('📧 密碼重設信已發送，請查收 Email');
+}
+
+function socialLogin(type) {
+  toast('⚠️ ' + type + ' 登入即將開放，請使用 Email 登入');
+}
+
+async function afterLogin(authUser) {
+  var { data: profile } = await sb.from('users').select('*').eq('id', authUser.id).single();
+  var name = (profile && profile.name) || (authUser.user_metadata && authUser.user_metadata.name) || authUser.email.split('@')[0];
+  var phone = (profile && profile.phone) || '';
+  curUser = { id: authUser.id, name: name, email: authUser.email };
+  document.getElementById('av').textContent = name[0].toUpperCase();
+  document.getElementById('uName').textContent = name;
+  document.getElementById('uEmail').textContent = authUser.email;
+  document.getElementById('pName').value = name;
+  document.getElementById('pEmail').value = authUser.email;
+  var pPhone = document.getElementById('pPhone');
+  if (pPhone) pPhone.value = phone;
+  var hr = new Date().getHours();
+  var greet = hr < 12 ? '早安' : hr < 17 ? '午安' : '晚安';
+  document.getElementById('welcomeMsg').textContent = greet + '，' + name.split(' ')[0] + ' 👋';
+  await renderProjects();
+  await renderHistory();
+  navigate('/dashboard');
+  toast('✅ 歡迎回來，' + name.split(' ')[0] + '！');
+}
+
+async function logout() {
+  await sb.auth.signOut();
+  curUser = null;
+  document.getElementById('loginEmail').value = '';
+  document.getElementById('loginPwd').value = '';
+  navigate('/login');
+  toast('已登出');
+}
+
+async function saveProfile() {
+  if (!curUser) return;
+  var name = document.getElementById('pName').value.trim();
+  var phone = document.getElementById('pPhone') ? document.getElementById('pPhone').value.trim() : '';
+  var { error } = await sb.from('users').update({ name: name, phone: phone }).eq('id', curUser.id);
+  if (error) { toast('⚠️ 儲存失敗：' + error.message); return; }
+  curUser.name = name;
+  document.getElementById('uName').textContent = name;
+  document.getElementById('av').textContent = name[0].toUpperCase();
+  toast('✅ 資料已儲存');
+}
+
+// ── 自動登入 ──
+(async function checkAutoLogin() {
+  var { data: { session } } = await sb.auth.getSession();
+  if (session) { await afterLogin(session.user); }
+})();
+
+// ── 渲染專案 ──
+async function renderProjects() {
+  var { data: projects } = await sb.from('projects').select('*');
+  allProjects = projects || [];
+  var total = allProjects.length;
+  var live = allProjects.filter(function(p) { return p.status === 'live'; }).length;
+  var statNums = document.querySelectorAll('.stat-box .sb-num');
+  if (statNums[0]) statNums[0].textContent = total;
+  if (statNums[1]) statNums[1].textContent = live;
+  var html = allProjects.map(function(p) {
+    var sMap = { live:['b-live','上線中'], development:['b-dev','開發中'], review:['b-review','審核中'], pending:['b-dev','待開發'] };
+    var b = sMap[p.status] || ['b-dev','開發中'];
+    var emoji = p.type==='game'?'⚔️':p.type==='app'?'📱':p.type==='system'?'📊':'🏢';
+    return '<div class="project-card">'+
+      '<div class="pc-thumb t-web">'+emoji+'<span class="pc-badge '+b[0]+'">'+b[1]+'</span></div>'+
+      '<div class="pc-body">'+
+        '<div class="pc-type">'+(p.type||'website')+'</div>'+
+        '<div class="pc-name">'+(p.title||'')+'</div>'+
+        (p.progress?'<div class="pc-url">📈 進度：'+p.progress+'%</div>':'')+
+        '<div class="pc-btns">'+
+          '<button class="btn-sm btn-blue" onclick="openModal(\''+p.id+'\')">📝 申請修改</button>'+
+        '</div>'+
+      '</div></div>';
+  }).join('');
+  if (!html) html = '<p style="color:var(--text3);padding:2rem;text-align:center">目前尚無進行中專案</p>';
+  document.getElementById('grid-overview').innerHTML = html;
+  document.getElementById('grid-projects').innerHTML = html;
+}
+
+// ── 渲染歷史 ──
+async function renderHistory() {
+  var { data: crs } = await sb.from('change_requests').select('*, projects(title)');
+  var { data: quotes } = await sb.from('quotations').select('*');
+  var items = [];
+  var pendingCR = 0;
+  (crs || []).forEach(function(cr) {
+    if (cr.status === 'pending') pendingCR++;
+    var sMap = { completed:['hs-done','✅ 已完成'], in_progress:['hs-proc','🔄 處理中'], pending:['hs-wait','⏳ 待處理'] };
+    var st = sMap[cr.status] || sMap.pending;
+    items.push({ date: cr.created_at || '', html:
+      '<div class="hi"><div class="hi-ico ico-blue">✏️</div>'+
+      '<div class="hi-meta"><div class="hi-title">'+((cr.description||'').substring(0,50))+'</div>'+
+      '<div class="hi-proj">'+((cr.projects&&cr.projects.title)||'')+'・修改申請</div>'+
+      '<span class="hi-tag '+st[0]+'">'+st[1]+'</span></div>'+
+      '<div class="hi-date">'+((cr.created_at||'').substring(0,10))+'</div></div>'
+    });
+  });
+  (quotes || []).forEach(function(q) {
+    var sMap = { confirmed:['hs-done','✅ 已確認'], pending:['hs-wait','⏳ 待確認'] };
+    var st = sMap[q.status] || sMap.pending;
+    items.push({ date: q.created_at || '', html:
+      '<div class="hi"><div class="hi-ico ico-green">💰</div>'+
+      '<div class="hi-meta"><div class="hi-title">報價單 #'+q.seq+'</div>'+
+      '<div class="hi-proj">NT$ '+((q.total_amount||0).toLocaleString())+'・有效至 '+(q.valid_until||'')+'</div>'+
+      '<span class="hi-tag '+st[0]+'">'+st[1]+'</span></div>'+
+      '<div class="hi-date">'+((q.created_at||'').substring(0,10))+'</div></div>'
+    });
+  });
+  items.sort(function(a, b) { return a.date < b.date ? 1 : -1; });
+  var statNums = document.querySelectorAll('.stat-box .sb-num');
+  if (statNums[2]) statNums[2].textContent = pendingCR;
+  var html = items.map(function(i) { return i.html; }).join('');
+  if (!html) html = '<p style="color:var(--text3);padding:2rem;text-align:center">目前沒有歷史紀錄</p>';
+  document.getElementById('historyList').innerHTML = html;
+}
+
+// ── Modal ──
+function openModal(id) {
+  mProjId = id; mStep = 1; mType = ''; mPri = 'lo';
+  document.getElementById('mDesc').value = '';
+  document.querySelectorAll('.type-card').forEach(function(c) { c.classList.remove('on'); });
+  document.querySelectorAll('.pb').forEach(function(b) { b.classList.remove('on'); });
+  document.querySelector('.pb.lo').classList.add('on');
+  var p = allProjects.find(function(x) { return x.id === id; });
+  document.getElementById('mProjName').textContent = p ? '專案：' + p.title : '';
+  showMStep(1);
+  document.getElementById('modal').classList.add('open');
+}
+function closeModal() {
+  document.getElementById('modal').classList.remove('open');
+  document.getElementById('aiLoading').classList.remove('show');
+  document.getElementById('aiOut').classList.remove('show');
+  document.getElementById('aiOut').style.display = 'none';
+  document.getElementById('aiLoading').style.display = 'none';
+}
+function pickType(el) {
+  document.querySelectorAll('.type-card').forEach(function(c) { c.classList.remove('on'); });
+  el.classList.add('on'); mType = el.querySelector('.tcl').textContent;
+}
+function pickPri(el, v) {
+  document.querySelectorAll('.pb').forEach(function(b) { b.classList.remove('on'); });
+  el.classList.add('on'); mPri = v;
+}
+function showMStep(n) {
+  [1,2,3].forEach(function(i) {
+    document.getElementById('ms'+i).style.display = i===n ? 'block' : 'none';
+    var dot = document.getElementById('sd'+i);
+    dot.className = 'sdot '+(i<n?'done':i===n?'cur':'off');
+  });
+  [1,2].forEach(function(i) {
+    var l = document.getElementById('sl'+i);
+    if (l) l.className = 'sline '+(i<n?'done':'');
+  });
+  var nb = document.getElementById('mNextBtn');
+  var fb = document.querySelector('.modal-foot .btn-secondary');
+  if (n === 3) {
+    nb.textContent = '關閉'; nb.className = 'btn-success';
+    nb.onclick = function() { closeModal(); };
+    if (fb) fb.style.display = 'none';
+  } else {
+    nb.className = 'btn-primary'; nb.onclick = modalNext;
+    nb.textContent = '下一步 →';
+    if (fb) fb.style.display = '';
+  }
+}
+
+async function modalNext() {
+  if (mStep === 1) {
+    if (!mType) { toast('⚠️ 請選擇修改類型'); return; }
+    var descText = document.getElementById('mDesc').value.trim();
+    if (!descText) { toast('⚠️ 請填寫修改說明'); return; }
+    mStep = 2; showMStep(2);
+    document.getElementById('aiLoading').style.display = 'block';
+    document.getElementById('aiLoading').classList.add('show');
+    var priLabel = mPri === 'lo' ? 'low' : mPri === 'mi' ? 'medium' : 'high';
+    var pLabel = mPri === 'lo' ? '🟢 一般' : mPri === 'mi' ? '🟡 較急' : '🔴 緊急';
+    var p = allProjects.find(function(x) { return x.id === mProjId; });
+
+    // 寫入 Supabase
+    var crId = null;
+    if (curUser && mProjId) {
+      var { data: crData } = await sb.from('change_requests').insert({
+        project_id: mProjId, client_id: curUser.id,
+        description: descText, priority: priLabel, status: 'pending'
+      }).select('id').single();
+      if (crData) crId = crData.id;
+    }
+
+    var code = '// Claude Code 修改指令\n// 專案：'+(p?p.title:'')+'\n// 類型：'+mType+
+      '\n\nclaude code --project-id '+(mProjId||'')+' \\\n  --task "'+mType+'" \\\n  --desc "'+
+      descText.substring(0,40)+'..." \\\n  --priority '+priLabel+' \\\n  --notify owner';
+    document.getElementById('aiCode').textContent = code;
+    document.getElementById('aiTags').innerHTML =
+      ['類型：'+mType,'專案：'+(p?p.title:''),pLabel].map(function(t) {
+        return '<span class="req-tag">'+t+'</span>';
+      }).join('');
+    setTimeout(function() {
+      document.getElementById('aiLoading').classList.remove('show');
+      document.getElementById('aiOut').style.display = 'block';
+      setTimeout(function() { document.getElementById('aiOut').classList.add('show'); }, 50);
+      setTimeout(function() {
+        mStep = 3; showMStep(3);
+        document.getElementById('mSummary').innerHTML =
+          '📁 專案：'+(p?p.title:'')+'<br>🔧 類型：'+mType+'<br>'+
+          '📝 說明：'+descText.substring(0,50)+(descText.length>50?'...':'')+'<br>'+
+          '⚡ 優先：'+pLabel+(crId?'<br>✅ 申請編號 #'+crId.substring(0,8):'');
+        renderHistory();
+      }, 2200);
+    }, 1200);
+  }
+}
+
+// ── 瀏覽器上下頁 ──
+window.addEventListener('popstate', function(e) {
+  if (e.state && e.state.path) {
+    if (e.state.path === '/login') navigate('/login');
+    else if (curUser) go(e.state.path);
+  }
+});
+
+// ── Toast ──
+function toast(msg) {
+  var el = document.getElementById('toastEl');
+  el.textContent = msg; el.classList.add('show');
+  setTimeout(function() { el.classList.remove('show'); }, 2800);
+}
+</script>
+</body>
+</html>
