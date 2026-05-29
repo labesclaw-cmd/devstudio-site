@@ -194,6 +194,17 @@ input:focus,textarea:focus,select:focus{border-color:var(--blue);background:var(
 .btn-secondary{background:var(--gray100);color:var(--text2);border:none;padding:.6rem 1.1rem;border-radius:9px;font-size:.88rem;cursor:pointer}
 .btn-success{background:var(--green);color:#fff;border:none;padding:.6rem 1.3rem;border-radius:9px;font-size:.88rem;font-weight:600;cursor:pointer}
 
+/* 詳情 Modal */
+.detail-info-row{display:flex;justify-content:space-between;align-items:center;padding:.5rem 0;border-bottom:1px solid var(--gray100);font-size:.85rem}
+.detail-info-row:last-child{border-bottom:none}
+.dir-label{color:var(--text3);font-size:.78rem}
+.dir-val{font-weight:600;color:var(--text)}
+.progress-bar-wrap{background:var(--gray200);border-radius:999px;height:8px;overflow:hidden;margin:.4rem 0 .2rem}
+.progress-bar-fill{height:100%;background:linear-gradient(90deg,var(--blue),var(--cyan));border-radius:999px;transition:width .6s ease}
+.cr-item{background:var(--gray50);border:1px solid var(--gray200);border-radius:8px;padding:.65rem .85rem;margin-bottom:.5rem}
+.cr-item-desc{font-size:.84rem;font-weight:500;margin-bottom:.25rem}
+.cr-item-meta{display:flex;gap:.5rem;align-items:center;font-size:.72rem;color:var(--text3)}
+
 /* Toast */
 .toast{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--text);color:#fff;padding:.7rem 1.2rem;border-radius:10px;font-size:.85rem;font-weight:500;z-index:999;opacity:0;transform:translateY(8px);transition:all .3s;pointer-events:none;max-width:280px}
 .toast.show{opacity:1;transform:translateY(0)}
@@ -405,6 +416,30 @@ input:focus,textarea:focus,select:focus{border-color:var(--blue);background:var(
   </div>
 </div>
 
+<!-- ══ 專案詳情 Modal ══ -->
+<div class="overlay" id="detailModal">
+  <div class="modal">
+    <div class="modal-head">
+      <div>
+        <h3>👁 專案詳情</h3>
+        <div class="sub" id="dtProjType"></div>
+      </div>
+      <button class="mc-btn" onclick="closeDetail()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div id="dtInfo"></div>
+      <div style="margin-top:1.25rem">
+        <div class="sec-label" style="margin-bottom:.75rem">修改申請記錄</div>
+        <div id="dtCRList"></div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-secondary" onclick="closeDetail()">關閉</button>
+      <button class="btn-primary" onclick="closeDetail();openModal(currentDetailId)">📝 申請修改</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toastEl"></div>
 
 <script>
@@ -541,6 +576,7 @@ async function renderProjects() {
         '<div class="pc-name">'+(p.title||'')+'</div>'+
         (p.progress?'<div class="pc-url">📈 進度：'+p.progress+'%</div>':'')+
         '<div class="pc-btns">'+
+          '<button class="btn-sm btn-ghost" onclick="openDetail(\''+p.id+'\')">👁 查看</button>'+
           '<button class="btn-sm btn-blue" onclick="openModal(\''+p.id+'\')">📝 申請修改</button>'+
         '</div>'+
       '</div></div>';
@@ -681,6 +717,45 @@ async function modalNext() {
       }, 2200);
     }, 1200);
   }
+}
+
+// ── 詳情 Modal ──
+var currentDetailId = null;
+async function openDetail(id) {
+  currentDetailId = id;
+  var p = allProjects.find(function(x) { return x.id === id; });
+  if (!p) return;
+  var sMap = { live:'上線中', development:'開發中', review:'審核中', pending:'待開發', in_progress:'開發中', completed:'已完成', negotiating:'洽談中', paused:'暫停中' };
+  var typeLabel = { website:'網站', game:'遊戲', app:'App', system:'系統' };
+  document.getElementById('dtProjType').textContent = (typeLabel[p.type]||p.type||'website')+'・'+p.title;
+  var progress = p.progress || 0;
+  var infoHtml =
+    '<div style="margin-bottom:1rem"><div class="dir-label" style="margin-bottom:.35rem">開發進度</div>'+
+    '<div class="progress-bar-wrap"><div class="progress-bar-fill" style="width:'+progress+'%"></div></div>'+
+    '<div style="font-size:.78rem;color:var(--text3);text-align:right">'+progress+'%</div></div>'+
+    '<div class="detail-info-row"><span class="dir-label">專案名稱</span><span class="dir-val">'+(p.title||'-')+'</span></div>'+
+    '<div class="detail-info-row"><span class="dir-label">專案類型</span><span class="dir-val">'+(typeLabel[p.type]||p.type||'-')+'</span></div>'+
+    '<div class="detail-info-row"><span class="dir-label">目前狀態</span><span class="dir-val">'+(sMap[p.status]||p.status||'-')+'</span></div>'+
+    (p.start_date?'<div class="detail-info-row"><span class="dir-label">開始日期</span><span class="dir-val">'+p.start_date+'</span></div>':'')+
+    (p.end_date?'<div class="detail-info-row"><span class="dir-label">預計完成</span><span class="dir-val">'+p.end_date+'</span></div>':'')+
+    (p.url?'<div class="detail-info-row"><span class="dir-label">網址</span><span class="dir-val"><a href="'+p.url+'" target="_blank" style="color:var(--blue)">'+p.url+'</a></span></div>':'')+
+    (p.notes?'<div style="margin-top:.75rem;background:var(--gray50);border:1px solid var(--gray200);border-radius:8px;padding:.75rem"><div class="dir-label" style="margin-bottom:.25rem">開發備註</div><div style="font-size:.84rem">'+p.notes+'</div></div>':'');
+  document.getElementById('dtInfo').innerHTML = infoHtml;
+  var { data: crs } = await sb.from('change_requests').select('*').eq('project_id', id).order('created_at', { ascending: false });
+  var stMap = { pending:['hs-wait','⏳ 待處理'], in_progress:['hs-proc','🔄 處理中'], done:['hs-done','✅ 已完成'], rejected:['hs-wait','❌ 已拒絕'] };
+  var crHtml = (crs||[]).map(function(cr) {
+    var st = stMap[cr.status] || stMap.pending;
+    return '<div class="cr-item">'+
+      '<div class="cr-item-desc">'+(cr.description||'').substring(0,60)+((cr.description||'').length>60?'...':'')+'</div>'+
+      '<div class="cr-item-meta"><span class="hi-tag '+st[0]+'" style="margin-top:0">'+st[1]+'</span><span>'+(cr.created_at||'').substring(0,10)+'</span></div>'+
+      '</div>';
+  }).join('');
+  if (!crHtml) crHtml = '<p style="font-size:.82rem;color:var(--text3)">尚無修改申請</p>';
+  document.getElementById('dtCRList').innerHTML = crHtml;
+  document.getElementById('detailModal').classList.add('open');
+}
+function closeDetail() {
+  document.getElementById('detailModal').classList.remove('open');
 }
 
 // ── 瀏覽器上下頁 ──
