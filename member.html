@@ -746,6 +746,7 @@ async function openDetail(id) {
   currentDetailId = id;
   var p = allProjects.find(function(x) { return x.id === id; });
   if (!p) return;
+  if (p.site_url) { window.open(p.site_url, '_blank'); return; }
   var sMap = { live:'上線中', development:'開發中', review:'審核中', pending:'待開發', in_progress:'開發中', completed:'已完成', negotiating:'洽談中', paused:'暫停中' };
   var typeLabel = { website:'網站', game:'遊戲', app:'App', system:'系統' };
   document.getElementById('dtProjType').textContent = (typeLabel[p.type]||p.type||'website')+'・'+p.title;
@@ -759,7 +760,7 @@ async function openDetail(id) {
     '<div class="detail-info-row"><span class="dir-label">目前狀態</span><span class="dir-val">'+(sMap[p.status]||p.status||'-')+'</span></div>'+
     (p.start_date?'<div class="detail-info-row"><span class="dir-label">開始日期</span><span class="dir-val">'+p.start_date+'</span></div>':'')+
     (p.end_date?'<div class="detail-info-row"><span class="dir-label">預計完成</span><span class="dir-val">'+p.end_date+'</span></div>':'')+
-    (p.url?'<div class="detail-info-row"><span class="dir-label">網址</span><span class="dir-val"><a href="'+p.url+'" target="_blank" style="color:var(--blue)">'+p.url+'</a></span></div>':'')+
+    (p.site_url?'<div class="detail-info-row"><span class="dir-label">網址</span><span class="dir-val"><a href="'+p.site_url+'" target="_blank" style="color:var(--blue)">'+p.site_url+'</a></span></div>':'')+
     (p.notes?'<div style="margin-top:.75rem;background:var(--gray50);border:1px solid var(--gray200);border-radius:8px;padding:.75rem"><div class="dir-label" style="margin-bottom:.25rem">開發備註</div><div style="font-size:.84rem">'+p.notes+'</div></div>':'');
   document.getElementById('dtInfo').innerHTML = infoHtml;
   var { data: crs } = await sb.from('change_requests').select('*').eq('project_id', id).order('created_at', { ascending: false });

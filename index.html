@@ -100,6 +100,8 @@ section{padding:5.5rem 2rem}
 .port-body{padding:1.25rem}
 .port-body h3{font-size:1rem;font-weight:700;margin-bottom:.4rem}
 .port-body p{font-size:.85rem;color:var(--text2);line-height:1.6}
+.port-link{display:inline-block;margin-top:.65rem;font-size:.8rem;font-weight:600;color:var(--blue);text-decoration:none}
+.port-link:hover{color:var(--indigo)}
 
 /* PROCESS */
 #process{position:relative;overflow:hidden}
@@ -318,7 +320,7 @@ footer p{color:#94a3b8;font-size:.85rem}
     <div class="section-tag">作品展示</div>
     <h2 class="section-title">精選作品集</h2>
     <p class="section-desc">每個專案都是一次用心的合作，以下是近期代表作。</p>
-    <div class="port-grid">
+    <div class="port-grid" id="port-grid">
       <div class="port-card"><div class="port-thumb pt1"><div class="port-overlay"><span class="port-overlay-tag">個人官網</span></div></div><div class="port-body"><h3>設計師品牌形象網站</h3><p>含作品集展示、聯絡表單、社群整合，完工時間 5 天。</p></div></div>
       <div class="port-card"><div class="port-thumb pt2"><div class="port-overlay"><span class="port-overlay-tag">遊戲私服</span></div></div><div class="port-body"><h3>天堂私服官方網站</h3><p>含排行榜、資料庫、活動公告等完整系統。</p></div></div>
       <div class="port-card"><div class="port-thumb pt3"><div class="port-overlay"><span class="port-overlay-tag">應用程序</span></div></div><div class="port-body"><h3>餐飲業後台管理系統</h3><p>訂單管理、庫存追蹤、每日報表自動產出。</p></div></div>
@@ -1052,6 +1054,38 @@ document.getElementById('contactForm').addEventListener('submit',async function(
     btn.textContent='送出需求';btn.disabled=false;
   }
 });
+
+// ── 作品集動態載入 ──
+(async function loadPortfolio() {
+  var ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRucG5qY2p6d3hyaG9wcXZ5bHV6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5NTQxMzQsImV4cCI6MjA5NTUzMDEzNH0.hbhyYGmxwVgh3kQD-v60OPQ8VlRghkJIKzQ4UPVWBAE';
+  try {
+    var res = await fetch(
+      'https://dnpnjcjzwxrhopqvyluz.supabase.co/rest/v1/projects?show_in_portfolio=eq.true&select=title,type,tags,screenshot_url,site_url,notes,end_date&order=end_date.desc.nullslast',
+      { headers: { apikey: ANON, Authorization: 'Bearer ' + ANON } }
+    );
+    var projects = await res.json();
+    if (!Array.isArray(projects) || !projects.length) return;
+    var typeLabel = { website:'個人官網', game:'遊戲私服', app:'App 開發', system:'系統開發', landing_page:'Landing Page', ecommerce:'電商網站' };
+    var fallbackColors = ['linear-gradient(135deg,#1e3a8a,#0891b2)', 'linear-gradient(135deg,#7c3aed,#db2777)', 'linear-gradient(135deg,#065f46,#0891b2)'];
+    var html = projects.map(function(p, i) {
+      var label = (p.tags && p.tags[0]) || typeLabel[p.type] || '網頁開發';
+      var thumbStyle = p.screenshot_url
+        ? 'background-image:url(' + p.screenshot_url + ')'
+        : fallbackColors[i % fallbackColors.length];
+      return '<div class="port-card">' +
+        '<div class="port-thumb" style="' + thumbStyle + '">' +
+          '<div class="port-overlay"><span class="port-overlay-tag">' + label + '</span></div>' +
+        '</div>' +
+        '<div class="port-body">' +
+          '<h3>' + (p.title || '') + '</h3>' +
+          (p.notes ? '<p>' + (p.notes.length > 60 ? p.notes.substring(0, 60) + '…' : p.notes) + '</p>' : '') +
+          (p.site_url ? '<a href="' + p.site_url + '" target="_blank" rel="noopener" class="port-link">查看網站 →</a>' : '') +
+        '</div>' +
+      '</div>';
+    }).join('');
+    document.getElementById('port-grid').innerHTML = html;
+  } catch (e) {}
+})();
 </script>
 </body>
 </html>
