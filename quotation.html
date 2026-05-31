@@ -585,7 +585,8 @@ function switchType(t) {
 // ── 初始化 ──
 (function init() {
   var p = getParams();
-  var isShortUrl = p.seq && !p.fees && !p.name;
+  var raw = new URLSearchParams(window.location.search);
+  var isShortUrl = raw.get('seq') && !raw.get('fees') && !raw.get('name');
 
   if (isShortUrl) {
     // 短網址模式：從 Edge Function 撈完整資料
