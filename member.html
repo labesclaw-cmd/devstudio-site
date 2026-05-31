@@ -208,6 +208,27 @@ input:focus,textarea:focus,select:focus{border-color:var(--blue);background:var(
 /* Toast */
 .toast{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--text);color:#fff;padding:.7rem 1.2rem;border-radius:10px;font-size:.85rem;font-weight:500;z-index:999;opacity:0;transform:translateY(8px);transition:all .3s;pointer-events:none;max-width:280px}
 .toast.show{opacity:1;transform:translateY(0)}
+
+/* ══ 手機版側邊欄 ══ */
+.sb-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:49}
+.sb-backdrop.sb-open{display:block}
+.sb-close{display:none;position:absolute;top:.8rem;right:.8rem;width:28px;height:28px;background:var(--gray100);border:none;border-radius:6px;cursor:pointer;font-size:.85rem;color:var(--text2);align-items:center;justify-content:center}
+.mob-topbar{display:none;align-items:center;gap:.75rem;padding:.65rem 1rem;background:var(--white);border-bottom:1px solid var(--gray200);position:sticky;top:0;z-index:40}
+.mob-hamburger{background:none;border:1.5px solid var(--gray200);border-radius:8px;width:36px;height:36px;cursor:pointer;font-size:1.1rem;flex-shrink:0}
+@media(max-width:768px){
+  .sidebar{transform:translateX(-100%);transition:transform .25s ease;z-index:50}
+  .sidebar.sb-open{transform:translateX(0)}
+  .sb-close{display:flex}
+  .mob-topbar{display:flex}
+  .main{margin-left:0;padding:0}
+  .main .url-bar{display:none}
+  .main .view{padding:1rem}
+  .projects-grid{grid-template-columns:1fr}
+  .stats-row{grid-template-columns:repeat(2,1fr)}
+  .hi{flex-direction:column;gap:.4rem}
+  .hi-date{align-self:flex-start}
+  .modal{margin:0 .75rem;max-width:calc(100vw - 1.5rem)}
+}
 </style>
 </head>
 <body>
@@ -253,6 +274,7 @@ input:focus,textarea:focus,select:focus{border-color:var(--blue);background:var(
 
     <!-- 側邊欄 -->
     <aside class="sidebar">
+      <button class="sb-close" onclick="closeSidebar()">✕</button>
       <div class="sidebar-logo">
         <div class="logo-text">Dev<span>Studio</span></div>
         <div class="user-row">
@@ -275,9 +297,15 @@ input:focus,textarea:focus,select:focus{border-color:var(--blue);background:var(
         <div class="logout-btn" onclick="logout()">🚪 登出帳號</div>
       </div>
     </aside>
+    <div class="sb-backdrop" id="sbBackdrop" onclick="closeSidebar()"></div>
 
     <!-- 主內容 -->
     <main class="main">
+      <!-- 手機頂列 -->
+      <div class="mob-topbar">
+        <button class="mob-hamburger" onclick="toggleSidebar()">☰</button>
+        <div class="logo-text" style="font-size:1rem">Dev<span>Studio</span></div>
+      </div>
       <!-- URL 顯示列 -->
       <div class="url-bar">
         🌐 <span class="url-domain">devstudio.com</span><span style="color:var(--text3)">/member</span><span class="url-path" id="urlPath">/dashboard</span>
@@ -462,7 +490,17 @@ var allProjects = [];
 var routeMap = { '/dashboard':'v-dashboard','/projects':'v-projects','/history':'v-history','/profile':'v-profile' };
 var navMap = { '/dashboard':0,'/projects':1,'/history':2,'/profile':3 };
 
+function toggleSidebar(){
+  document.querySelector('.sidebar').classList.toggle('sb-open');
+  document.getElementById('sbBackdrop').classList.toggle('sb-open');
+}
+function closeSidebar(){
+  document.querySelector('.sidebar').classList.remove('sb-open');
+  document.getElementById('sbBackdrop').classList.remove('sb-open');
+}
+
 function go(path) {
+  closeSidebar();
   if (!curUser) { navigate('/login'); return; }
   curRoute = path;
   try { history.pushState({ path: path }, '', path); } catch(e) {}
