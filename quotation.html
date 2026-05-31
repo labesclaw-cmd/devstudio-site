@@ -428,7 +428,11 @@ function render(d) {
   // 費用明細
   var feeBody = document.getElementById('feeBody');
   var fees = [];
-  try { fees = d.fees ? JSON.parse(decodeURIComponent(d.fees)) : []; } catch(e) {}
+  if (Array.isArray(d.fees)) {
+    fees = d.fees;
+  } else {
+    try { fees = d.fees ? JSON.parse(decodeURIComponent(d.fees)) : []; } catch(e) {}
+  }
   if (!fees.length) fees = [{ name: '開發費用', amt: '請洽詢' }];
   feeBody.innerHTML = fees.map(function(f) {
     return '<tr><td>' + f.name + '</td><td><div class="fee-desc">' + (f.desc || '') + '</div></td><td>' + f.amt + '</td></tr>';
@@ -579,30 +583,55 @@ function switchType(t) {
 }
 
 // ── 初始化 ──
-var hasData = window.location.search.length > 1;
-if (hasData) {
-  var params = getParams();
-  render(params);
-  // 客戶模式：隱藏預覽切換按鈕，顯示僅列印按鈕
-  document.getElementById('previewBtns').style.display = 'none';
-  document.getElementById('clientBtns').style.display = '';
-} else {
-  // 預覽模式：顯示產生連結工具
-  document.getElementById('genPanel').style.display = '';
-  render({
-    type: 'new', no: 'QUO-0001', name: '王小明（範例）', contact: 'ok1088',
-    ptype: '遊戲私服官網', style: '黑金奇幻', deadline: '7 個工作天', expiry: '7 天內有效',
-    feats: '伺服器狀態顯示,最新公告,排行榜,BOSS卡資料庫,新手教學',
-    desc: '根據客戶需求建立完整天堂私服官方網站，包含資料庫系統與公告管理功能。',
-    fees: encodeURIComponent(JSON.stringify([
-      { name: '網站開發費用', desc: '含 RWD 設計、功能開發、基本 SEO', amt: 'NT$ 20,000 ~ 30,000' },
-      { name: '資料庫建置', desc: 'BOSS卡、排行榜資料庫系統', amt: 'NT$ 5,000 ~ 8,000' },
-      { name: '部署與教學', desc: 'Vercel 部署 + 操作教學', amt: 'NT$ 2,000' },
-    ])),
-    amin: '27000', amax: '40000',
-    line: 'DevStudio', email: 'labesclaw@gmail.com',
-  });
-}
+(function init() {
+  var p = getParams();
+  var isShortUrl = p.seq && !p.fees && !p.name;
+
+  if (isShortUrl) {
+    // 短網址模式：從 Edge Function 撈完整資料
+    document.getElementById('previewBtns').style.display = 'none';
+    document.getElementById('clientBtns').style.display = '';
+    fetch(EDGE_FN, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'get_quotation', seq: parseInt(p.seq) })
+    }).then(function(r) { return r.json(); }).then(function(d) {
+      if (d.success) {
+        render(d);
+        // 已確認的報價單隱藏操作按鈕
+        if (d.status === 'client_accepted' || d.status === 'confirmed') {
+          document.getElementById('confirmArea').style.display = 'none';
+          document.getElementById('confirmedMsg').style.display = 'block';
+        }
+      } else {
+        document.getElementById('toolbarInfo').textContent = '找不到此報價單';
+      }
+    }).catch(function() {
+      document.getElementById('toolbarInfo').textContent = '載入失敗，請重新整理';
+    });
+  } else if (window.location.search.length > 1) {
+    // 長網址模式（舊格式相容）
+    render(p);
+    document.getElementById('previewBtns').style.display = 'none';
+    document.getElementById('clientBtns').style.display = '';
+  } else {
+    // 預覽模式：顯示產生連結工具
+    document.getElementById('genPanel').style.display = '';
+    render({
+      type: 'new', no: 'QUO-0001', name: '王小明（範例）', contact: 'ok1088',
+      ptype: '遊戲私服官網', style: '黑金奇幻', deadline: '7 個工作天', expiry: '7 天內有效',
+      feats: '伺服器狀態顯示,最新公告,排行榜,BOSS卡資料庫,新手教學',
+      desc: '根據客戶需求建立完整天堂私服官方網站，包含資料庫系統與公告管理功能。',
+      fees: encodeURIComponent(JSON.stringify([
+        { name: '網站開發費用', desc: '含 RWD 設計、功能開發、基本 SEO', amt: 'NT$ 20,000 ~ 30,000' },
+        { name: '資料庫建置', desc: 'BOSS卡、排行榜資料庫系統', amt: 'NT$ 5,000 ~ 8,000' },
+        { name: '部署與教學', desc: 'Vercel 部署 + 操作教學', amt: 'NT$ 2,000' },
+      ])),
+      amin: '27000', amax: '40000',
+      line: 'DevStudio', email: 'labesclaw@gmail.com',
+    });
+  }
+}());
 </script>
 </body>
 </html>
