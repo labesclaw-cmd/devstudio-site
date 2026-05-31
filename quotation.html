@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DevStudio 報價單</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --blue:#2563eb;--blue-d:#1d4ed8;--indigo:#4f46e5;--cyan:#0891b2;
+  --text:#0f172a;--text2:#475569;--text3:#94a3b8;
+  --white:#fff;--gray50:#f8fafc;--gray100:#f1f5f9;--gray200:#e2e8f0;
+  --r:12px;--rl:20px;
+  --sh:0 2px 8px rgba(0,0,0,.08),0 8px 24px rgba(0,0,0,.06);
+}
+html,body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--gray100);color:var(--text);line-height:1.6}
+body{padding:2rem 1rem;min-height:100vh}
+
+/* ── 工具列 ── */
+.toolbar{max-width:860px;margin:0 auto 1.25rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.75rem}
+.toolbar-left{font-size:.82rem;color:var(--text3)}
+.toolbar-left strong{color:var(--text2)}
+.toolbar-btns{display:flex;gap:.6rem}
+.tool-btn{display:flex;align-items:center;gap:.4rem;background:var(--white);border:1px solid var(--gray200);color:var(--text2);padding:.45rem 1rem;border-radius:8px;font-size:.82rem;font-weight:600;cursor:pointer;transition:all .15s;text-decoration:none}
+.tool-btn:hover{border-color:var(--blue);color:var(--blue)}
+.tool-btn.primary{background:var(--blue);color:#fff;border-color:var(--blue)}
+.tool-btn.primary:hover{background:var(--blue-d)}
+
+/* ── 報價單主體 ── */
+.quotation{max-width:860px;margin:0 auto;background:var(--white);border-radius:var(--rl);overflow:hidden;box-shadow:0 4px 32px rgba(0,0,0,.1)}
+
+/* ── Header ── */
+.q-header{background:linear-gradient(135deg,#0f172a 0%,#1e3a5f 50%,#1d4ed8 100%);padding:2.5rem;position:relative;overflow:hidden}
+.q-header::before{content:'';position:absolute;top:-80px;right:-80px;width:360px;height:360px;background:radial-gradient(circle,rgba(6,182,212,.18),transparent 65%);pointer-events:none}
+.q-header::after{content:'';position:absolute;bottom:-50px;left:20%;width:240px;height:240px;background:radial-gradient(circle,rgba(37,99,235,.12),transparent 65%);pointer-events:none}
+.q-header-inner{position:relative;z-index:1;display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:1.5rem}
+.brand .logo{font-size:1.5rem;font-weight:900;color:#fff;letter-spacing:-.02em}
+.brand .logo span{color:#67e8f9}
+.brand .tagline{font-size:.78rem;color:#93c5fd;margin-top:.2rem;letter-spacing:.04em}
+.q-right{text-align:right}
+.q-type-badge{display:inline-flex;align-items:center;gap:.4rem;padding:.3rem .85rem;border-radius:999px;font-size:.78rem;font-weight:700;margin-bottom:.5rem}
+.badge-new{background:rgba(99,102,241,.25);border:1px solid rgba(167,139,250,.4);color:#c4b5fd}
+.badge-update{background:rgba(8,145,178,.25);border:1px solid rgba(103,232,249,.4);color:#67e8f9}
+.q-number{font-size:1.5rem;font-weight:900;color:#fff;letter-spacing:.05em;line-height:1}
+.q-number-en{font-size:.72rem;color:#93c5fd;letter-spacing:.12em;text-transform:uppercase;margin-top:.2rem}
+
+/* ── 資訊帶 ── */
+.q-info-strip{background:linear-gradient(90deg,#eff6ff,#ecfeff);border-bottom:1px solid var(--gray200);padding:1rem 2.5rem;display:flex;gap:2rem;flex-wrap:wrap}
+.q-info-item .lbl{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text3);margin-bottom:.1rem}
+.q-info-item .val{font-size:.88rem;font-weight:600;color:var(--text)}
+
+/* ── 主體 ── */
+.q-body{padding:2rem 2.5rem}
+.sec{margin-bottom:1.75rem}
+.sec-title{display:flex;align-items:center;gap:.5rem;font-size:.73rem;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--blue);margin-bottom:.9rem;padding-bottom:.45rem;border-bottom:2px solid #dbeafe}
+.sec-icon{width:20px;height:20px;background:var(--blue);border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:.65rem;color:#fff;flex-shrink:0}
+
+/* 專案資訊卡 */
+.proj-info-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:.75rem}
+.proj-info-card{background:var(--gray50);border:1px solid var(--gray200);border-radius:var(--r);padding:.9rem 1rem}
+.pic-lbl{font-size:.7rem;color:var(--text3);font-weight:600;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.3rem}
+.pic-val{font-size:.88rem;font-weight:600;color:var(--text)}
+
+/* 功能標籤 */
+.feat-group{margin-bottom:.75rem}
+.feat-group-title{font-size:.75rem;font-weight:700;color:var(--text2);margin-bottom:.4rem}
+.feat-tags{display:flex;flex-wrap:wrap;gap:.35rem}
+.feat-tag{font-size:.73rem;background:#eff6ff;color:var(--blue);border:1px solid #bfdbfe;padding:.2rem .55rem;border-radius:6px;font-weight:600}
+.feat-tag.style{background:#f5f3ff;color:#6d28d9;border-color:#ddd6fe}
+.feat-tag.neutral{background:var(--gray100);color:var(--text2);border-color:var(--gray200)}
+
+/* 費用明細表 */
+.fee-table{width:100%;border-collapse:separate;border-spacing:0;margin-bottom:.75rem}
+.fee-table th{background:#eff6ff;color:var(--blue);font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;padding:.6rem 1rem;text-align:left}
+.fee-table th:first-child{border-radius:8px 0 0 8px}
+.fee-table th:last-child{border-radius:0 8px 8px 0;text-align:right}
+.fee-table td{padding:.75rem 1rem;font-size:.875rem;border-bottom:1px solid var(--gray200);color:var(--text2);vertical-align:top}
+.fee-table td:last-child{text-align:right;font-weight:600;color:var(--text);white-space:nowrap}
+.fee-table tr:last-child td{border-bottom:none}
+.fee-desc{font-size:.75rem;color:var(--text3);margin-top:.2rem}
+
+/* 總計 */
+.total-bar{background:linear-gradient(135deg,#0f172a,#1e3a5f);border-radius:var(--r);padding:1.25rem 1.5rem;display:flex;justify-content:space-between;align-items:center;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem}
+.total-lbl{color:#93c5fd;font-size:.78rem;font-weight:600;letter-spacing:.05em;text-transform:uppercase}
+.total-sub{font-size:.72rem;color:#67e8f9;margin-top:.15rem}
+.total-amt{font-size:1.6rem;font-weight:900;color:#fff;letter-spacing:-.02em;text-align:right}
+.total-note{font-size:.72rem;color:#93c5fd;margin-top:.1rem;text-align:right}
+
+/* 注意事項 */
+.notice{background:#fff7ed;border:1px solid #fed7aa;border-radius:var(--r);padding:1rem 1.25rem}
+.notice-title{display:flex;align-items:center;gap:.4rem;font-size:.75rem;font-weight:700;color:#c2410c;margin-bottom:.5rem}
+.notice ul{list-style:none;display:flex;flex-direction:column;gap:.3rem}
+.notice li{font-size:.82rem;color:#9a3412;display:flex;align-items:flex-start;gap:.4rem;line-height:1.5}
+.notice li::before{content:'•';color:#f97316;flex-shrink:0;margin-top:.05rem}
+
+/* 確認按鈕區 */
+.confirm-area{display:flex;gap:.75rem;justify-content:center;margin-top:1.5rem;flex-wrap:wrap}
+.btn-confirm{background:var(--blue);color:#fff;border:none;padding:.8rem 2rem;border-radius:10px;font-size:.95rem;font-weight:700;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:.5rem}
+.btn-confirm:hover{background:var(--indigo);transform:translateY(-1px)}
+.btn-confirm:disabled{background:var(--text3);cursor:not-allowed;transform:none}
+.btn-decline{background:transparent;color:var(--text3);border:1.5px solid var(--gray200);padding:.8rem 1.5rem;border-radius:10px;font-size:.9rem;font-weight:600;cursor:pointer;transition:all .15s}
+.btn-decline:hover{border-color:#fca5a5;color:#dc2626}
+.confirmed-msg{display:none;background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;border-radius:10px;padding:1rem 1.5rem;text-align:center;font-size:.9rem;font-weight:600;margin-top:1rem}
+
+/* 底部 */
+.q-footer{background:linear-gradient(90deg,var(--gray50),#eff6ff);border-top:1px solid var(--gray200);padding:1.25rem 2.5rem;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.75rem}
+.footer-contact{display:flex;gap:1.25rem;flex-wrap:wrap}
+.fc-item{display:flex;align-items:center;gap:.35rem;font-size:.8rem;color:var(--text2)}
+.q-sign{text-align:right}
+.sign-lbl{font-size:.7rem;color:var(--text3);margin-bottom:.3rem}
+.sign-line{width:120px;height:1px;background:var(--gray200);margin-left:auto}
+.sign-name{font-size:.75rem;color:var(--text3);margin-top:.25rem}
+
+/* ── 產生連結工具 ── */
+.gen-panel{max-width:860px;margin:2rem auto 0;background:var(--white);border:1.5px dashed #93c5fd;border-radius:var(--rl);padding:1.75rem;box-shadow:var(--sh)}
+.gen-panel h3{font-size:1rem;font-weight:700;color:var(--blue);margin-bottom:.25rem}
+.gen-panel p{font-size:.85rem;color:var(--text2);margin-bottom:1.25rem}
+.gen-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:.9rem}
+.gfg{display:flex;flex-direction:column;gap:.3rem}
+.gfg label{font-size:.78rem;font-weight:600;color:var(--text2)}
+.gfg input,.gfg select,.gfg textarea{background:var(--gray50);border:1.5px solid var(--gray200);border-radius:8px;padding:.55rem .75rem;font-size:.85rem;font-family:inherit;color:var(--text);outline:none;transition:border-color .15s}
+.gfg input:focus,.gfg select:focus,.gfg textarea:focus{border-color:var(--blue);background:var(--white)}
+.gfg textarea{resize:vertical;min-height:70px}
+.gen-fee-rows{display:flex;flex-direction:column;gap:.5rem;margin-bottom:.75rem}
+.gen-fee-row{display:grid;grid-template-columns:1fr 1fr auto;gap:.5rem;align-items:center}
+.gen-fee-row input{padding:.45rem .65rem;font-size:.82rem}
+.add-fee-btn{background:#eff6ff;color:var(--blue);border:1.5px solid #bfdbfe;border-radius:7px;padding:.4rem .9rem;font-size:.8rem;font-weight:600;cursor:pointer;transition:all .15s}
+.add-fee-btn:hover{background:var(--blue);color:#fff}
+.del-btn{background:#fee2e2;color:#dc2626;border:none;border-radius:6px;width:28px;height:28px;cursor:pointer;font-size:.9rem;display:flex;align-items:center;justify-content:center}
+.gen-out{background:var(--gray50);border:1px solid var(--gray200);border-radius:8px;padding:.75rem 1rem;font-size:.78rem;font-family:monospace;color:var(--blue);word-break:break-all;margin-top:1rem;min-height:48px;line-height:1.6;display:none}
+.gen-actions{display:flex;gap:.6rem;margin-top:.75rem;flex-wrap:wrap}
+.gen-btn{padding:.55rem 1.25rem;border-radius:8px;font-size:.85rem;font-weight:600;cursor:pointer;border:none;transition:all .15s}
+.gen-btn.go{background:var(--blue);color:#fff}
+.gen-btn.go:hover{background:var(--indigo)}
+.gen-btn.copy{background:var(--gray100);color:var(--text2);border:1px solid var(--gray200)}
+.gen-btn.copy:hover{border-color:var(--blue);color:var(--blue)}
+
+@media print{
+  .toolbar,.gen-panel,.confirm-area{display:none}
+  body{background:#fff;padding:0}
+  .quotation{box-shadow:none;border-radius:0}
+}
+@media(max-width:640px){
+  .q-header{padding:1.5rem}
+  .q-body{padding:1.5rem 1.25rem}
+  .q-info-strip{padding:.9rem 1.25rem;gap:1rem}
+  .q-footer{padding:1rem 1.25rem}
+  .q-header-inner{flex-direction:column}
+  .q-right{text-align:left}
+  .total-amt{text-align:left}
+}
+</style>
+</head>
+<body>
+
+<!-- 工具列 -->
+<div class="toolbar">
+  <div class="toolbar-left">目前預覽：<strong id="toolbarInfo">範例報價單</strong></div>
+  <div class="toolbar-btns" id="previewBtns">
+    <button class="tool-btn" id="btnNew" onclick="switchType('new')" style="border-color:var(--blue);color:var(--blue)">🆕 新專案報價</button>
+    <button class="tool-btn" id="btnUpdate" onclick="switchType('update')">🔧 修改申請報價</button>
+    <button class="tool-btn primary" onclick="window.print()">🖨️ 列印 / PDF</button>
+  </div>
+  <div class="toolbar-btns" id="clientBtns" style="display:none">
+    <button class="tool-btn primary" onclick="window.print()">🖨️ 列印 / PDF</button>
+  </div>
+</div>
+
+<!-- 報價單 -->
+<div class="quotation" id="quotation">
+
+  <!-- Header -->
+  <div class="q-header">
+    <div class="q-header-inner">
+      <div class="brand">
+        <div class="logo">Dev<span>Studio</span></div>
+        <div class="tagline" id="headerTagline">專業網頁與應用開發</div>
+      </div>
+      <div class="q-right">
+        <div class="q-type-badge" id="typeBadge">🆕 新專案報價</div>
+        <div class="q-number" id="quoteNo">QUO-0001</div>
+        <div class="q-number-en">Quotation</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 資訊帶 -->
+  <div class="q-info-strip">
+    <div class="q-info-item"><div class="lbl">客戶名稱</div><div class="val" id="infoName">—</div></div>
+    <div class="q-info-item"><div class="lbl">聯絡方式</div><div class="val" id="infoContact">—</div></div>
+    <div class="q-info-item"><div class="lbl">報價日期</div><div class="val" id="infoDate">—</div></div>
+    <div class="q-info-item"><div class="lbl">有效期限</div><div class="val" id="infoExpiry">7 天內有效</div></div>
+  </div>
+
+  <!-- 主體 -->
+  <div class="q-body">
+
+    <!-- 專案資訊 -->
+    <div class="sec">
+      <div class="sec-title"><div class="sec-icon">📋</div>專案資訊</div>
+      <div class="proj-info-grid" id="projInfoGrid"></div>
+    </div>
+
+    <!-- 需求功能 -->
+    <div class="sec" id="featSec">
+      <div class="sec-title"><div class="sec-icon">✅</div>需求功能與規格</div>
+      <div id="featContent"></div>
+    </div>
+
+    <!-- 費用明細 -->
+    <div class="sec">
+      <div class="sec-title"><div class="sec-icon">💰</div>費用明細</div>
+      <table class="fee-table">
+        <thead><tr><th>項目</th><th>說明</th><th>金額</th></tr></thead>
+        <tbody id="feeBody"></tbody>
+      </table>
+    </div>
+
+    <!-- 總計 -->
+    <div class="total-bar">
+      <div>
+        <div class="total-lbl">估算總計</div>
+        <div class="total-sub" id="totalSub">依實際工作量最終確認</div>
+      </div>
+      <div>
+        <div class="total-amt" id="totalAmt">NT$ —</div>
+        <div class="total-note" id="totalNote">確認後安排開發時程</div>
+      </div>
+    </div>
+
+    <!-- 注意事項 -->
+    <div class="notice">
+      <div class="notice-title">📌 注意事項</div>
+      <ul id="noticeList"></ul>
+    </div>
+
+    <!-- 確認按鈕（非列印模式顯示） -->
+    <div class="confirm-area" id="confirmArea">
+      <button class="btn-confirm" id="btnConfirm" onclick="confirmQuote()">✅ 確認接受報價</button>
+      <button class="btn-decline" onclick="declineQuote()">暫不接受</button>
+    </div>
+    <div class="confirmed-msg" id="confirmedMsg">🎉 已確認！我們將盡快與您聯繫安排後續流程，感謝您的信任。</div>
+
+  </div>
+
+  <!-- 底部 -->
+  <div class="q-footer">
+    <div class="footer-contact">
+      <div class="fc-item">💬 LINE：<span id="footerLine">DevStudio</span></div>
+      <div class="fc-item">✉️ <span id="footerEmail">labesclaw@gmail.com</span></div>
+    </div>
+    <div class="q-sign">
+      <div class="sign-lbl">服務提供方</div>
+      <div class="sign-line"></div>
+      <div class="sign-name">DevStudio</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- 產生連結工具（僅預覽模式顯示） -->
+<div class="gen-panel" id="genPanel" style="display:none">
+  <h3>🛠 產生報價連結</h3>
+  <p>填入以下資訊後點「產生連結」，複製連結傳送給客戶。系統自動報價時請直接使用 Telegram 的連結。</p>
+  <div class="gen-grid">
+    <div class="gfg">
+      <label>類型</label>
+      <select id="gType" onchange="onTypeChange()">
+        <option value="new">新專案報價</option>
+        <option value="update">修改申請報價</option>
+      </select>
+    </div>
+    <div class="gfg">
+      <label>報價單號碼</label>
+      <input id="gNo" type="text" placeholder="QUO-0001">
+    </div>
+    <div class="gfg">
+      <label>DB Seq（資料庫序號）</label>
+      <input id="gSeq" type="text" placeholder="1">
+    </div>
+    <div class="gfg">
+      <label>客戶姓名</label>
+      <input id="gName" type="text" placeholder="王小明">
+    </div>
+    <div class="gfg">
+      <label>聯絡方式</label>
+      <input id="gContact" type="text" placeholder="LINE ID 或電話">
+    </div>
+    <div class="gfg" id="gProjTypeWrap">
+      <label>專案類型</label>
+      <input id="gProjType" type="text" placeholder="遊戲私服官網">
+    </div>
+    <div class="gfg">
+      <label>視覺風格</label>
+      <input id="gStyle" type="text" placeholder="黑金奇幻">
+    </div>
+    <div class="gfg">
+      <label>預計交付</label>
+      <input id="gDeadline" type="text" placeholder="2 週">
+    </div>
+    <div class="gfg">
+      <label>有效期限</label>
+      <input id="gExpiry" type="text" value="7 天內有效">
+    </div>
+    <div class="gfg" style="grid-column:1/-1">
+      <label>包含功能（逗號分隔）</label>
+      <textarea id="gFeats" placeholder="首頁設計, RWD, SEO優化, 聯絡表單"></textarea>
+    </div>
+    <div class="gfg" style="grid-column:1/-1">
+      <label>需求說明</label>
+      <textarea id="gDesc" placeholder="客戶需求說明..."></textarea>
+    </div>
+  </div>
+  <div style="margin-top:1rem">
+    <div style="font-size:.78rem;font-weight:600;color:var(--text2);margin-bottom:.5rem">費用項目</div>
+    <div class="gen-fee-rows" id="genFeeRows">
+      <div class="gen-fee-row">
+        <input type="text" placeholder="項目名稱（如 網站開發費用）">
+        <input type="text" placeholder="金額（如 NT$ 20,000）">
+        <button class="del-btn" onclick="delFeeRow(this)">✕</button>
+      </div>
+    </div>
+    <button class="add-fee-btn" onclick="addFeeRow()">＋ 新增費用項目</button>
+  </div>
+  <div class="gen-actions">
+    <button class="gen-btn go" onclick="generateLink()">✨ 產生連結</button>
+    <button class="gen-btn copy" id="copyBtn" onclick="copyLink()" style="display:none">📋 複製連結</button>
+  </div>
+  <div class="gen-out" id="genOut"></div>
+</div>
+
+<script>
+var EDGE_FN = 'https://dnpnjcjzwxrhopqvyluz.supabase.co/functions/v1/devstudio-webhook';
+
+// ── 預設注意事項 ──
+var DEFAULT_NOTICES = [
+  '報價單有效期限如上所示，逾期需重新報價',
+  '確認後請透過 LINE 回覆，我們將安排後續簽約與付款流程',
+  '實際費用依最終工作範圍確認，如有異動將事先告知',
+  '專案完成後提供 7 天免費修改（文字與小幅調整）',
+  '如有任何疑問歡迎透過 LINE 聯繫，通常 2 小時內回覆'
+];
+
+// ── URL 參數解析 ──
+function getParams() {
+  var p = new URLSearchParams(window.location.search);
+  var get = function(k, d) { return p.get(k) || d || ''; };
+  return {
+    type:     get('type', 'new'),
+    no:       get('no', 'QUO-0001'),
+    seq:      get('seq', ''),
+    name:     get('name', '範例客戶'),
+    contact:  get('contact', ''),
+    ptype:    get('ptype', ''),
+    style:    get('style', ''),
+    deadline: get('deadline', ''),
+    expiry:   get('expiry', '7 天內有效'),
+    feats:    get('feats', ''),
+    desc:     get('desc', ''),
+    fees:     get('fees', ''),
+    amin:     get('amin', ''),
+    amax:     get('amax', ''),
+    line:     get('line', 'DevStudio'),
+    email:    get('email', 'labesclaw@gmail.com'),
+  };
+}
+
+// ── 渲染報價單 ──
+function render(d) {
+  // 類型標籤
+  var badge = document.getElementById('typeBadge');
+  if (d.type === 'update') {
+    badge.textContent = '🔧 修改申請報價';
+    badge.className = 'q-type-badge badge-update';
+    document.getElementById('headerTagline').textContent = '網站維護與更新服務';
+  } else {
+    badge.textContent = '🆕 新專案報價';
+    badge.className = 'q-type-badge badge-new';
+    document.getElementById('headerTagline').textContent = '專業網頁與應用開發';
+  }
+
+  // 基本資訊
+  document.getElementById('quoteNo').textContent = d.no;
+  document.getElementById('infoName').textContent = d.name || '—';
+  document.getElementById('infoContact').textContent = d.contact || '—';
+  document.getElementById('infoExpiry').textContent = d.expiry || '7 天內有效';
+
+  // 日期
+  var now = new Date();
+  document.getElementById('infoDate').textContent =
+    now.getFullYear() + ' 年 ' + (now.getMonth() + 1) + ' 月 ' + now.getDate() + ' 日';
+
+  // 專案資訊卡
+  var cards = [];
+  if (d.ptype)    cards.push(['專案類型', d.ptype]);
+  if (d.style)    cards.push(['視覺風格', d.style]);
+  if (d.deadline) cards.push(['預計交付', d.deadline]);
+  if (d.expiry)   cards.push(['報價有效', d.expiry]);
+  document.getElementById('projInfoGrid').innerHTML = cards.map(function(c) {
+    return '<div class="proj-info-card"><div class="pic-lbl">' + c[0] + '</div><div class="pic-val">' + c[1] + '</div></div>';
+  }).join('');
+
+  // 功能需求
+  var featSec = document.getElementById('featSec');
+  var featContent = document.getElementById('featContent');
+  var items = [];
+  if (d.feats) items = d.feats.split(',').map(function(f) { return f.trim(); }).filter(Boolean);
+  if (d.desc || items.length) {
+    featContent.innerHTML = '';
+    if (items.length) {
+      var fg = document.createElement('div');
+      fg.className = 'feat-group';
+      fg.innerHTML = '<div class="feat-group-title">包含功能</div><div class="feat-tags">' +
+        items.map(function(f) { return '<span class="feat-tag">✓ ' + f + '</span>'; }).join('') + '</div>';
+      featContent.appendChild(fg);
+    }
+    if (d.desc) {
+      var dg = document.createElement('div');
+      dg.style.cssText = 'font-size:.87rem;color:var(--text2);line-height:1.75;margin-top:.6rem;background:var(--gray50);border:1px solid var(--gray200);border-radius:var(--r);padding:.9rem 1rem';
+      dg.textContent = d.desc;
+      featContent.appendChild(dg);
+    }
+    featSec.style.display = '';
+  } else {
+    featSec.style.display = 'none';
+  }
+
+  // 費用明細
+  var feeBody = document.getElementById('feeBody');
+  var fees = [];
+  try { fees = d.fees ? JSON.parse(decodeURIComponent(d.fees)) : []; } catch(e) {}
+  if (!fees.length) fees = [{ name: '開發費用', amt: '請洽詢' }];
+  feeBody.innerHTML = fees.map(function(f) {
+    return '<tr><td>' + f.name + '</td><td><div class="fee-desc">' + (f.desc || '') + '</div></td><td>' + f.amt + '</td></tr>';
+  }).join('');
+
+  // 總計
+  if (d.amin && d.amax) {
+    document.getElementById('totalAmt').textContent = 'NT$ ' + fmtNum(d.amin) + ' ~ ' + fmtNum(d.amax);
+  } else if (d.amin) {
+    document.getElementById('totalAmt').textContent = 'NT$ ' + fmtNum(d.amin) + ' 起';
+  } else {
+    document.getElementById('totalAmt').textContent = '依需求報價';
+  }
+
+  // 注意事項
+  document.getElementById('noticeList').innerHTML = DEFAULT_NOTICES.map(function(n) {
+    return '<li>' + n + '</li>';
+  }).join('');
+
+  // 底部
+  document.getElementById('footerLine').textContent = d.line || 'DevStudio';
+  document.getElementById('footerEmail').textContent = d.email || 'labesclaw@gmail.com';
+  document.getElementById('toolbarInfo').textContent = d.name ? d.name + ' 的報價單' : '範例報價單';
+}
+
+// ── 格式化數字 ──
+function fmtNum(n) {
+  var num = parseInt(String(n).replace(/,/g, ''), 10);
+  return isNaN(num) ? n : num.toLocaleString();
+}
+
+// ── 產生連結 ──
+function generateLink() {
+  var fees = [];
+  document.querySelectorAll('.gen-fee-row').forEach(function(row) {
+    var ins = row.querySelectorAll('input');
+    if (ins[0].value.trim()) fees.push({ name: ins[0].value.trim(), amt: ins[1].value.trim() || '請洽詢', desc: '' });
+  });
+
+  // 從費用中抓最低最高金額
+  var amin = '', amax = '';
+  fees.forEach(function(f) {
+    var m = f.amt.match(/[\d,]+/g);
+    if (m && m.length >= 2) { amin = m[0].replace(/,/g, ''); amax = m[m.length - 1].replace(/,/g, ''); }
+    else if (m && m.length === 1) { amin = m[0].replace(/,/g, ''); }
+  });
+
+  var seqVal = document.getElementById('gSeq').value.trim();
+
+  var paramsObj = {
+    type:     document.getElementById('gType').value,
+    no:       document.getElementById('gNo').value,
+    name:     document.getElementById('gName').value,
+    contact:  document.getElementById('gContact').value,
+    ptype:    document.getElementById('gProjType').value,
+    style:    document.getElementById('gStyle').value,
+    deadline: document.getElementById('gDeadline').value,
+    expiry:   document.getElementById('gExpiry').value,
+    feats:    document.getElementById('gFeats').value,
+    desc:     document.getElementById('gDesc').value,
+    fees:     encodeURIComponent(JSON.stringify(fees)),
+    amin:     amin, amax: amax,
+    line:     'DevStudio',
+    email:    'labesclaw@gmail.com',
+  };
+  if (seqVal) paramsObj.seq = seqVal;
+
+  var params = new URLSearchParams(paramsObj);
+  var url = window.location.origin + window.location.pathname + '?' + params.toString();
+  document.getElementById('genOut').style.display = 'block';
+  document.getElementById('genOut').textContent = url;
+  document.getElementById('copyBtn').style.display = '';
+
+  // 即時預覽
+  window.history.replaceState({}, '', url);
+  render(Object.fromEntries(params));
+}
+
+function copyLink() {
+  var out = document.getElementById('genOut').textContent;
+  if (!out) { generateLink(); return; }
+  navigator.clipboard.writeText(out).then(function() {
+    var btn = document.getElementById('copyBtn');
+    btn.textContent = '✅ 已複製！';
+    setTimeout(function() { btn.textContent = '📋 複製連結'; }, 2000);
+  });
+}
+
+// ── 費用列管理 ──
+function addFeeRow() {
+  var row = document.createElement('div');
+  row.className = 'gen-fee-row';
+  row.innerHTML = '<input type="text" placeholder="項目名稱"><input type="text" placeholder="金額（如 NT$ 500 ~ 1,200）"><button class="del-btn" onclick="delFeeRow(this)">✕</button>';
+  document.getElementById('genFeeRows').appendChild(row);
+}
+function delFeeRow(btn) {
+  var rows = document.querySelectorAll('.gen-fee-row');
+  if (rows.length > 1) btn.closest('.gen-fee-row').remove();
+}
+
+// ── 確認 / 拒絕 ──
+function confirmQuote() {
+  var p = getParams();
+  var btn = document.getElementById('btnConfirm');
+  if (p.seq) {
+    btn.disabled = true;
+    btn.textContent = '確認中...';
+    fetch(EDGE_FN, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'client_accept', seq: parseInt(p.seq) })
+    }).then(function() {
+      document.getElementById('confirmArea').style.display = 'none';
+      document.getElementById('confirmedMsg').style.display = 'block';
+    }).catch(function() {
+      // 即使失敗也顯示確認（避免讓客戶困惑）
+      document.getElementById('confirmArea').style.display = 'none';
+      document.getElementById('confirmedMsg').style.display = 'block';
+    });
+    return;
+  }
+  // 預覽模式：直接顯示確認訊息
+  document.getElementById('confirmArea').style.display = 'none';
+  document.getElementById('confirmedMsg').style.display = 'block';
+}
+
+function declineQuote() {
+  if (confirm('確定暫不接受此報價？如有疑問歡迎透過 LINE 聯繫我們。')) {
+    document.getElementById('confirmArea').style.display = 'none';
+    document.getElementById('confirmArea').insertAdjacentHTML('afterend',
+      '<div style="text-align:center;color:var(--text3);font-size:.85rem;margin-top:1rem">已記錄，如有需要請隨時透過 LINE 聯繫我們 😊</div>');
+  }
+}
+
+function onTypeChange() {
+  var t = document.getElementById('gType').value;
+  document.getElementById('gProjTypeWrap').style.display = t === 'update' ? 'none' : '';
+}
+
+function switchType(t) {
+  var d = getParams();
+  d.type = t;
+  render(d);
+  document.getElementById('btnNew').style.borderColor = t === 'new' ? 'var(--blue)' : 'var(--gray200)';
+  document.getElementById('btnNew').style.color = t === 'new' ? 'var(--blue)' : 'var(--text2)';
+  document.getElementById('btnUpdate').style.borderColor = t === 'update' ? 'var(--cyan)' : 'var(--gray200)';
+  document.getElementById('btnUpdate').style.color = t === 'update' ? 'var(--cyan)' : 'var(--text2)';
+}
+
+// ── 初始化 ──
+var hasData = window.location.search.length > 1;
+if (hasData) {
+  var params = getParams();
+  render(params);
+  // 客戶模式：隱藏預覽切換按鈕，顯示僅列印按鈕
+  document.getElementById('previewBtns').style.display = 'none';
+  document.getElementById('clientBtns').style.display = '';
+} else {
+  // 預覽模式：顯示產生連結工具
+  document.getElementById('genPanel').style.display = '';
+  render({
+    type: 'new', no: 'QUO-0001', name: '王小明（範例）', contact: 'ok1088',
+    ptype: '遊戲私服官網', style: '黑金奇幻', deadline: '7 個工作天', expiry: '7 天內有效',
+    feats: '伺服器狀態顯示,最新公告,排行榜,BOSS卡資料庫,新手教學',
+    desc: '根據客戶需求建立完整天堂私服官方網站，包含資料庫系統與公告管理功能。',
+    fees: encodeURIComponent(JSON.stringify([
+      { name: '網站開發費用', desc: '含 RWD 設計、功能開發、基本 SEO', amt: 'NT$ 20,000 ~ 30,000' },
+      { name: '資料庫建置', desc: 'BOSS卡、排行榜資料庫系統', amt: 'NT$ 5,000 ~ 8,000' },
+      { name: '部署與教學', desc: 'Vercel 部署 + 操作教學', amt: 'NT$ 2,000' },
+    ])),
+    amin: '27000', amax: '40000',
+    line: 'DevStudio', email: 'labesclaw@gmail.com',
+  });
+}
+</script>
+</body>
+</html>
