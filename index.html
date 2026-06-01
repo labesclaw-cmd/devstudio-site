@@ -89,20 +89,30 @@ section{padding:5.5rem 2rem}
 .port-bg{position:absolute;inset:0;background:url('https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=1600&q=75') center/cover;filter:brightness(.07)}
 .port-bg-grad{position:absolute;inset:0;background:linear-gradient(180deg,#fff,rgba(241,245,249,.97))}
 .port-inner{position:relative;z-index:1}
-.port-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1.5rem}
-.port-card{border:1px solid var(--gray200);border-radius:var(--rl);overflow:hidden;transition:box-shadow .2s,transform .2s;background:var(--white)}
-.port-card:hover{box-shadow:var(--sh-b);transform:translateY(-4px)}
-.port-thumb{height:200px;background-size:cover;background-position:center;position:relative}
-.pt1{background-image:url('https://images.unsplash.com/photo-1467232004584-a241de8bcf5d?w=600&q=75')}
-.pt2{background-image:url('https://images.unsplash.com/photo-1542751371-adc38448a05e?w=600&q=75')}
-.pt3{background-image:url('https://images.unsplash.com/photo-1555066931-4365d14bab8c?w=600&q=75')}
-.port-overlay{position:absolute;inset:0;background:linear-gradient(to bottom,rgba(0,0,0,.1),rgba(0,0,0,.45));display:flex;align-items:flex-end;padding:1rem}
-.port-overlay-tag{font-size:.75rem;color:#fff;font-weight:700;text-transform:uppercase;background:rgba(37,99,235,.8);padding:.2rem .6rem;border-radius:6px}
-.port-body{padding:1.25rem}
-.port-body h3{font-size:1rem;font-weight:700;margin-bottom:.4rem}
-.port-body p{font-size:.85rem;color:var(--text2);line-height:1.6}
-.port-link{display:inline-block;margin-top:.65rem;font-size:.8rem;font-weight:600;color:var(--blue);text-decoration:none}
-.port-link:hover{color:var(--indigo)}
+.cat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1.75rem}
+.cat-card{border:1px solid var(--gray200);border-radius:var(--rl);padding:3rem 2rem;text-align:center;background:var(--white);cursor:pointer;transition:box-shadow .2s,transform .2s;user-select:none}
+.cat-card:hover{box-shadow:var(--sh-b);transform:translateY(-4px)}
+.cat-icon{width:80px;height:80px;border-radius:20px;margin:0 auto 1.25rem;display:flex;align-items:center;justify-content:center;font-size:2.2rem}
+.cat-card h3{font-size:1.15rem;font-weight:700;margin-bottom:.6rem}
+.cat-card p{font-size:.88rem;color:var(--text2);line-height:1.65;margin-bottom:1.5rem}
+.cat-btn{display:inline-block;font-size:.82rem;font-weight:600;color:var(--blue);background:#eff6ff;border:1px solid #bfdbfe;border-radius:8px;padding:.4rem 1rem;transition:all .15s}
+.cat-card:hover .cat-btn{background:var(--blue);color:#fff;border-color:var(--blue)}
+.port-modal-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:500;align-items:center;justify-content:center;padding:1rem}
+.port-modal-backdrop.open{display:flex}
+.port-modal{background:var(--white);border-radius:var(--rl);width:100%;max-width:700px;max-height:88vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.25)}
+.port-modal-header{display:flex;align-items:center;justify-content:space-between;padding:1.25rem 1.5rem;border-bottom:1px solid var(--gray200)}
+.port-modal-header h3{font-size:1.1rem;font-weight:700}
+.port-modal-close{width:32px;height:32px;border:none;background:var(--gray100);border-radius:8px;font-size:1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--text2);transition:background .15s}
+.port-modal-close:hover{background:var(--gray200)}
+.port-modal-body{overflow-y:auto;padding:1.25rem 1.5rem;display:flex;flex-direction:column;gap:1.25rem}
+.port-modal-item{display:flex;gap:1rem;border:1px solid var(--gray200);border-radius:12px;overflow:hidden}
+.port-modal-thumb{width:180px;flex-shrink:0;min-height:120px;background:var(--gray100);background-size:cover;background-position:center top}
+.port-modal-info{padding:1rem;flex:1}
+.port-modal-info h4{font-size:.95rem;font-weight:700;margin-bottom:.4rem}
+.port-modal-info p{font-size:.83rem;color:var(--text2);line-height:1.6;margin-bottom:.65rem}
+.port-modal-link{font-size:.82rem;font-weight:600;color:var(--blue);text-decoration:none}
+.port-modal-link:hover{color:var(--indigo)}
+.port-modal-empty{text-align:center;color:var(--text3);font-size:.9rem;padding:2rem}
 
 /* PROCESS */
 #process{position:relative;overflow:hidden}
@@ -327,14 +337,45 @@ footer p{color:#94a3b8;font-size:.85rem}
   <div class="container port-inner">
     <div class="section-tag">作品展示</div>
     <h2 class="section-title">精選作品集</h2>
-    <p class="section-desc">每個專案都是一次用心的合作，以下是近期代表作。</p>
-    <div class="port-grid" id="port-grid">
-      <div class="port-card"><div class="port-thumb pt1"><div class="port-overlay"><span class="port-overlay-tag">個人官網</span></div></div><div class="port-body"><h3>設計師品牌形象網站</h3><p>含作品集展示、聯絡表單、社群整合，完工時間 5 天。</p></div></div>
-      <div class="port-card"><div class="port-thumb pt2"><div class="port-overlay"><span class="port-overlay-tag">遊戲私服</span></div></div><div class="port-body"><h3>天堂私服官方網站</h3><p>含排行榜、資料庫、活動公告等完整系統。</p></div></div>
-      <div class="port-card"><div class="port-thumb pt3"><div class="port-overlay"><span class="port-overlay-tag">應用程序</span></div></div><div class="port-body"><h3>餐飲業後台管理系統</h3><p>訂單管理、庫存追蹤、每日報表自動產出。</p></div></div>
+    <p class="section-desc">點選類別，探索各類型代表作品。</p>
+    <div class="cat-grid">
+      <div class="cat-card" data-cat="website">
+        <div class="cat-icon" style="background:#eff6ff">🌐</div>
+        <h3>個人官方網站</h3>
+        <p>品牌形象、作品集、個人履歷網站，展現您的專業形象。</p>
+        <span class="cat-btn">查看作品</span>
+      </div>
+      <div class="cat-card" data-cat="game">
+        <div class="cat-icon" style="background:#fdf4ff">🎮</div>
+        <h3>遊戲私服官方網站</h3>
+        <p>含排行榜、活動公告、會員系統的遊戲私服完整官網。</p>
+        <span class="cat-btn">查看作品</span>
+      </div>
+      <div class="cat-card" data-cat="app">
+        <div class="cat-icon" style="background:#f0fdf4">📱</div>
+        <h3>APP 軟體開發</h3>
+        <p>iOS / Android 原生 App，從 MVP 規劃到完整產品上架。</p>
+        <span class="cat-btn">查看作品</span>
+      </div>
+      <div class="cat-card" data-cat="system">
+        <div class="cat-icon" style="background:#fff7ed">⚙️</div>
+        <h3>應用程序開發</h3>
+        <p>後台管理系統、自動化工具、API 串接整合方案。</p>
+        <span class="cat-btn">查看作品</span>
+      </div>
     </div>
   </div>
 </section>
+
+<div class="port-modal-backdrop" id="portModal">
+  <div class="port-modal">
+    <div class="port-modal-header">
+      <h3 id="portModalTitle">作品集</h3>
+      <button class="port-modal-close" id="portModalClose">✕</button>
+    </div>
+    <div class="port-modal-body" id="portModalBody"></div>
+  </div>
+</div>
 
 <section id="process">
   <div class="proc-bg"></div><div class="proc-grad"></div>
@@ -1063,36 +1104,67 @@ document.getElementById('contactForm').addEventListener('submit',async function(
   }
 });
 
-// ── 作品集動態載入 ──
+// ── 作品集分類 Modal ──
 (async function loadPortfolio() {
   var ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRucG5qY2p6d3hyaG9wcXZ5bHV6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5NTQxMzQsImV4cCI6MjA5NTUzMDEzNH0.hbhyYGmxwVgh3kQD-v60OPQ8VlRghkJIKzQ4UPVWBAE';
+  var allProjects = [];
+  var catConfig = {
+    website: { label: '個人官方網站', types: ['website', 'landing_page'] },
+    game:    { label: '遊戲私服官方網站', types: ['game'] },
+    app:     { label: 'APP 軟體開發', types: ['app'] },
+    system:  { label: '應用程序開發', types: ['system', 'ecommerce'] }
+  };
+  var fallbackGrads = [
+    'linear-gradient(135deg,#1e3a8a,#0891b2)',
+    'linear-gradient(135deg,#7c3aed,#db2777)',
+    'linear-gradient(135deg,#065f46,#0891b2)',
+    'linear-gradient(135deg,#92400e,#b45309)'
+  ];
   try {
     var res = await fetch(
-      'https://dnpnjcjzwxrhopqvyluz.supabase.co/rest/v1/projects?show_in_portfolio=eq.true&select=title,type,tags,screenshot_url,site_url,notes,end_date&order=end_date.desc.nullslast',
+      'https://dnpnjcjzwxrhopqvyluz.supabase.co/rest/v1/projects?show_in_portfolio=eq.true&select=title,type,tags,screenshot_url,screenshots,site_url,notes,end_date&order=end_date.desc.nullslast',
       { headers: { apikey: ANON, Authorization: 'Bearer ' + ANON } }
     );
-    var projects = await res.json();
-    if (!Array.isArray(projects) || !projects.length) return;
-    var typeLabel = { website:'個人官網', game:'遊戲私服', app:'App 開發', system:'系統開發', landing_page:'Landing Page', ecommerce:'電商網站' };
-    var fallbackColors = ['linear-gradient(135deg,#1e3a8a,#0891b2)', 'linear-gradient(135deg,#7c3aed,#db2777)', 'linear-gradient(135deg,#065f46,#0891b2)'];
-    var html = projects.map(function(p, i) {
-      var label = (p.tags && p.tags[0]) || typeLabel[p.type] || '網頁開發';
-      var thumbStyle = p.screenshot_url
-        ? 'background-image:url(' + p.screenshot_url + ')'
-        : fallbackColors[i % fallbackColors.length];
-      return '<div class="port-card">' +
-        '<div class="port-thumb" style="' + thumbStyle + '">' +
-          '<div class="port-overlay"><span class="port-overlay-tag">' + label + '</span></div>' +
-        '</div>' +
-        '<div class="port-body">' +
-          '<h3>' + (p.title || '') + '</h3>' +
-          (p.notes ? '<p>' + (p.notes.length > 60 ? p.notes.substring(0, 60) + '…' : p.notes) + '</p>' : '') +
-          (p.site_url ? '<a href="' + p.site_url + '" target="_blank" rel="noopener" class="port-link">查看網站 →</a>' : '') +
-        '</div>' +
-      '</div>';
-    }).join('');
-    document.getElementById('port-grid').innerHTML = html;
-  } catch (e) {}
+    allProjects = await res.json();
+    if (!Array.isArray(allProjects)) allProjects = [];
+  } catch(e) {}
+
+  document.querySelectorAll('.cat-card').forEach(function(card) {
+    card.addEventListener('click', function() {
+      var cat = card.getAttribute('data-cat');
+      var cfg = catConfig[cat];
+      var filtered = allProjects.filter(function(p) { return cfg.types.indexOf(p.type) !== -1; });
+      document.getElementById('portModalTitle').textContent = cfg.label;
+      var bodyHtml = '';
+      if (!filtered.length) {
+        bodyHtml = '<div class="port-modal-empty">此類別目前尚無公開作品，敬請期待。</div>';
+      } else {
+        bodyHtml = filtered.map(function(p, i) {
+          var thumbStyle = p.screenshot_url
+            ? 'background-image:url(' + p.screenshot_url + ')'
+            : fallbackGrads[i % fallbackGrads.length];
+          var desc = p.notes ? (p.notes.length > 80 ? p.notes.substring(0, 80) + '…' : p.notes) : '';
+          return '<div class="port-modal-item">' +
+            '<div class="port-modal-thumb" style="' + thumbStyle + '"></div>' +
+            '<div class="port-modal-info">' +
+              '<h4>' + (p.title || '') + '</h4>' +
+              (desc ? '<p>' + desc + '</p>' : '') +
+              (p.site_url ? '<a href="' + p.site_url + '" target="_blank" rel="noopener" class="port-modal-link">查看網站 →</a>' : '') +
+            '</div>' +
+          '</div>';
+        }).join('');
+      }
+      document.getElementById('portModalBody').innerHTML = bodyHtml;
+      document.getElementById('portModal').classList.add('open');
+    });
+  });
+
+  document.getElementById('portModalClose').addEventListener('click', function() {
+    document.getElementById('portModal').classList.remove('open');
+  });
+  document.getElementById('portModal').addEventListener('click', function(e) {
+    if (e.target === this) this.classList.remove('open');
+  });
 })();
 </script>
 </body>
