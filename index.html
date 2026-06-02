@@ -152,7 +152,11 @@ section{padding:5.5rem 2rem}
 .bubble.user .msg{background:#eff6ff;border:1px solid #bfdbfe;color:var(--blue);border-bottom-right-radius:3px}
 .ai-input-row{display:flex;gap:.5rem;padding:.75rem 1rem;border-top:1px solid var(--gray200);background:var(--white)}
 .ai-input-row input{flex:1;background:var(--gray50);border:1.5px solid var(--gray200);border-radius:8px;padding:.5rem .75rem;font-size:.85rem;outline:none;font-family:inherit}
-.ai-input-row button{background:var(--blue);color:#fff;border:none;border-radius:8px;padding:.5rem .85rem;font-size:.85rem;cursor:not-allowed;opacity:.6}
+  .ai-input-row button{background:var(--blue);color:#fff;border:none;border-radius:8px;padding:.5rem .85rem;font-size:.85rem;cursor:pointer;transition:opacity .15s}
+  .ai-input-row button:disabled{cursor:not-allowed;opacity:.5}
+  .ai-fill-btn{display:none;width:100%;background:#16a34a;color:#fff;border:none;border-radius:8px;padding:.65rem;font-size:.88rem;font-weight:600;cursor:pointer;margin-top:.5rem}
+  .ai-fill-btn.show{display:block}
+  .ai-turns{font-size:.7rem;color:var(--text3);text-align:right;padding:.3rem 1rem 0}
 .ai-dev-note{background:#fef9c3;border-top:1px solid #fde047;padding:.5rem 1rem;font-size:.73rem;color:#713f12}
 
 /* QR */
@@ -404,14 +408,15 @@ footer p{color:#94a3b8;font-size:.85rem}
             <div class="ai-icon">🤖</div>
             <div><h4>AI 需求助理</h4><p>告訴我你的想法，我幫你整理需求</p></div>
           </div>
-          <div class="ai-chat-area">
-            <div class="bubble ai"><div class="av">AI</div><div class="msg">你好！請問你想開發什麼類型的專案呢？😊</div></div>
+          <div class="ai-chat-area" id="aiChatArea">
+            <div class="bubble ai"><div class="av">AI</div><div class="msg">你好！我是 DevStudio 的需求助理 👋 請問你想開發什麼類型的專案呢？</div></div>
           </div>
+          <div class="ai-turns" id="aiTurns">還可以對話 5 輪</div>
           <div class="ai-input-row">
-            <input type="text" placeholder="輸入你的想法..." disabled>
-            <button disabled>送出</button>
+            <input type="text" id="aiInput" placeholder="輸入你的想法...">
+            <button id="aiSend">送出</button>
           </div>
-          <div class="ai-dev-note">🔧 後端串接位置 — Gemini Flash API proxy</div>
+          <button class="ai-fill-btn" id="aiFillBtn">✅ 需求已整理，幫我填入表單</button>
         </div>
         <div class="qr-box">
           <div class="qr-area">📱<br>Line<br>QR Code</div>
@@ -1164,6 +1169,112 @@ document.getElementById('contactForm').addEventListener('submit',async function(
   });
   document.getElementById('portModal').addEventListener('click', function(e) {
     if (e.target === this) this.classList.remove('open');
+  });
+})();
+
+// ── AI 需求助理 ───────────────────────────────────────────────────────────────
+(function() {
+  const EF_URL = 'https://dnpnjcjzwxrhopqvyluz.supabase.co/functions/v1/ai-assistant';
+  const chatArea = document.getElementById('aiChatArea');
+  const input    = document.getElementById('aiInput');
+  const sendBtn  = document.getElementById('aiSend');
+  const turnsEl  = document.getElementById('aiTurns');
+  const fillBtn  = document.getElementById('aiFillBtn');
+  let messages   = [];
+  let lastFormData = null;
+
+  function addBubble(role, text) {
+    const wrap = document.createElement('div');
+    wrap.className = 'bubble ' + (role === 'ai' ? 'ai' : 'user');
+    const av  = document.createElement('div'); av.className = 'av';
+    av.textContent = role === 'ai' ? 'AI' : '我';
+    const msg = document.createElement('div'); msg.className = 'msg';
+    msg.textContent = text;
+    wrap.appendChild(av); wrap.appendChild(msg);
+    chatArea.appendChild(wrap);
+    chatArea.scrollTop = chatArea.scrollHeight;
+  }
+
+  function setLoading(on) {
+    sendBtn.disabled = on;
+    input.disabled   = on;
+    sendBtn.textContent = on ? '...' : '送出';
+  }
+
+  async function send() {
+    const text = input.value.trim();
+    if (!text) return;
+    input.value = '';
+    addBubble('user', text);
+    messages.push({ role: 'user', content: text });
+    setLoading(true);
+
+    try {
+      const res  = await fetch(EF_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages }),
+      });
+      const data = await res.json();
+
+      if (data.error) { addBubble('ai', '抱歉，發生錯誤，請稍後再試。'); return; }
+
+      // 清除 FORM_DATA 區塊只顯示純回應文字
+      const displayText = data.reply.replace(/===FORM_DATA===[\s\S]*?===END===/g, '').trim();
+      addBubble('ai', displayText);
+      messages.push({ role: 'assistant', content: data.reply });
+
+      // 更新輪數顯示
+      const left = data.turnsLeft ?? 0;
+      turnsEl.textContent = left > 0 ? `還可以對話 ${left} 輪` : '需求整理完成！';
+
+      // 有 formData → 顯示填入按鈕
+      if (data.formData) {
+        lastFormData = data.formData;
+        fillBtn.classList.add('show');
+        setLoading(true); // 停止輸入
+        input.disabled = true;
+        sendBtn.disabled = true;
+      }
+    } catch(e) {
+      addBubble('ai', '網路錯誤，請稍後再試。');
+    } finally {
+      if (!lastFormData) setLoading(false);
+    }
+  }
+
+  sendBtn.addEventListener('click', send);
+  input.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } });
+
+  // 填入表單
+  fillBtn.addEventListener('click', function() {
+    if (!lastFormData) return;
+    const d = lastFormData;
+
+    // 類型選擇
+    const typeMap = { website: '🌐 個人官方網站', game: '⚔️ 遊戲私服官網', app: '📱 APP 開發', system: '⚙️ 應用程序開發' };
+    document.querySelectorAll('#typeGroup .opt').forEach(btn => {
+      if (btn.dataset.val === d.type) btn.click();
+    });
+
+    // 預算
+    if (d.budget) {
+      const budgetEl = document.getElementById('f-budget');
+      if (budgetEl) budgetEl.value = d.budget;
+    }
+
+    // 需求描述
+    const descEl = document.getElementById('f-desc');
+    if (descEl && d.description) descEl.value = d.description;
+
+    // 參考網站
+    const refEl = document.querySelector('#cond-website input[placeholder="https://..."]');
+    if (refEl && d.reference) refEl.value = d.reference;
+
+    // 捲動到表單
+    document.getElementById('contactForm').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    fillBtn.textContent = '✅ 已填入！請確認並補充細節後送出';
+    fillBtn.style.background = '#15803d';
   });
 })();
 </script>
