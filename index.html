@@ -635,7 +635,7 @@ footer p{color:#94a3b8;font-size:.85rem}
               </select>
             </div>
             <div class="fg"><label>希望上線時間</label>
-              <select><option value="">請選擇</option><option>越快越好（2 週內）</option><option>1 個月內</option><option>1～3 個月</option><option>時間彈性</option></select>
+              <select id="f-timeline"><option value="">請選擇</option><option>越快越好（2 週內）</option><option>1 個月內</option><option>1～3 個月</option><option>時間彈性</option></select>
             </div>
           </div>
 
@@ -1272,23 +1272,68 @@ document.getElementById('contactForm').addEventListener('submit',async function(
     if (!lastFormData) return;
     const d = lastFormData;
 
-    // 類型選擇
-    const typeMap = { website: '🌐 個人官方網站', game: '⚔️ 遊戲私服官網', app: '📱 APP 開發', system: '⚙️ 應用程序開發' };
+    // 1. 專案類型
     document.querySelectorAll('#typeGroup .opt').forEach(btn => {
       if (btn.dataset.val === d.type) btn.click();
     });
 
-    // 預算
-    if (d.budget) {
-      const budgetEl = document.getElementById('f-budget');
-      if (budgetEl) budgetEl.value = d.budget;
+    // 2. 視覺風格（模糊比對 style label）
+    if (d.style) {
+      const styleKeywords = d.style.toLowerCase();
+      const styleMap = {
+        '暗黑': ['dark-tech', 'black-gold'],
+        '史詩': ['black-gold', 'dark-tech'],
+        '黑金': ['black-gold'],
+        '科技': ['dark-tech'],
+        '簡約': ['clean-white', 'corporate'],
+        '清新': ['clean-white', 'natural'],
+        '炫彩': ['vibrant'],
+        '漸層': ['vibrant'],
+        '企業': ['corporate'],
+        '正式': ['corporate'],
+      };
+      let targetStyle = null;
+      for (const [kw, styles] of Object.entries(styleMap)) {
+        if (styleKeywords.includes(kw)) { targetStyle = styles[0]; break; }
+      }
+      if (targetStyle) {
+        const card = document.querySelector(`.style-card[data-style="${targetStyle}"]`);
+        if (card) card.click();
+      }
     }
 
-    // 需求描述
-    const descEl = document.getElementById('f-desc');
-    if (descEl && d.description) descEl.value = d.description;
+    // 3. 預算（從金額數字對應到選項文字）
+    const budgetEl = document.getElementById('f-budget');
+    if (budgetEl && d.budget) {
+      const amt = parseInt(String(d.budget).replace(/[^0-9]/g, '')) || 0;
+      let budgetOpt = '';
+      if (amt < 5000)        budgetOpt = 'NT$ 5,000 以下';
+      else if (amt <= 20000) budgetOpt = 'NT$ 5,000 ~ 20,000';
+      else if (amt <= 50000) budgetOpt = 'NT$ 20,000 ~ 50,000';
+      else                   budgetOpt = 'NT$ 50,000 以上';
+      Array.from(budgetEl.options).forEach(opt => {
+        if (opt.text.startsWith(budgetOpt)) { budgetEl.value = opt.value || opt.text; budgetEl.dispatchEvent(new Event('change')); }
+      });
+    }
 
-    // 參考網站
+    // 4. 上線時間
+    const timelineEl = document.getElementById('f-timeline');
+    if (timelineEl && d.timeline) {
+      const tl = d.timeline;
+      Array.from(timelineEl.options).forEach(opt => {
+        const t = opt.text;
+        if ((tl.includes('2週') || tl.includes('兩週') || tl.includes('越快')) && t.includes('2 週')) timelineEl.value = t;
+        else if ((tl.includes('1個月') || tl.includes('一個月')) && t.includes('1 個月')) timelineEl.value = t;
+        else if ((tl.includes('1~3') || tl.includes('1-3') || tl.includes('三個月')) && t.includes('1～3')) timelineEl.value = t;
+        else if (tl.includes('彈性') && t.includes('彈性')) timelineEl.value = t;
+      });
+    }
+
+    // 5. 需求描述
+    const descEl = document.getElementById('f-desc');
+    if (descEl && d.description) { descEl.value = d.description; descEl.dispatchEvent(new Event('input')); }
+
+    // 6. 參考網站
     const refEl = document.querySelector('#cond-website input[placeholder="https://..."]');
     if (refEl && d.reference) refEl.value = d.reference;
 
