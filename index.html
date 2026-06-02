@@ -1175,7 +1175,7 @@ document.getElementById('contactForm').addEventListener('submit',async function(
 // ── AI 需求助理 ───────────────────────────────────────────────────────────────
 (function() {
   const EF_URL      = 'https://dnpnjcjzwxrhopqvyluz.supabase.co/functions/v1/ai-assistant';
-  const COOLDOWN_MS = 30 * 60 * 1000; // 30 分鐘冷卻
+  const COOLDOWN_MS = 5 * 60 * 1000; // 5 分鐘冷卻
   const LS_KEY      = 'ds_ai_done_at';
 
   const chatArea = document.getElementById('aiChatArea');
@@ -1195,7 +1195,7 @@ document.getElementById('contactForm').addEventListener('submit',async function(
       input.disabled = true;
       sendBtn.disabled = true;
       turnsEl.textContent = `需求已整理完畢（${mins} 分鐘後可再次諮詢）`;
-      addBubble('ai', `您好！您剛才已完成需求諮詢，${mins} 分鐘後即可再次使用。如有急迫需求，歡迎直接掃描 QR Code 聯繫我們 😊`);
+      addBubble('ai', `您好！您剛才已完成需求諮詢，${mins} 分鐘後即可再次使用 😊`);
       return true;
     }
     return false;
