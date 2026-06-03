@@ -596,7 +596,7 @@ async function afterLogin(authUser) {
 }
 
 async function logout() {
-  await sb.auth.signOut();
+  await sb.auth.signOut({ scope: 'global' });
   curUser = null;
   document.getElementById('loginEmail').value = '';
   document.getElementById('loginPwd').value = '';
@@ -718,6 +718,11 @@ async function changePassword() {
 
 // ── 自動登入 ──
 (async function checkAutoLogin() {
+  // LINE login callback must be handled BEFORE session check (user not yet logged in)
+  var _params = new URLSearchParams(window.location.search);
+  if (_params.get('code') && _params.get('state') === 'line_login') {
+    await handleLineCallback();
+  }
   var { data: { session } } = await sb.auth.getSession();
   if (session) { await afterLogin(session.user); }
 })();
