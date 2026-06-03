@@ -354,7 +354,7 @@ input:focus,textarea:focus,select:focus{border-color:var(--blue);background:var(
           <div class="fg"><label>姓名</label><input type="text" id="pName"></div>
           <div class="fg"><label>電子郵件</label><input type="email" id="pEmail" disabled style="opacity:.6"></div>
           <div class="fg"><label>電話</label><input type="tel" id="pPhone" placeholder="0912-000-000"></div>
-          <div class="fg"><label>Line ID</label><input type="text" id="pLine" placeholder="@yourline"></div>
+          <div class="fg"><label>LINE 帳號</label><div id="lineBindStatus"></div></div>
           <button class="btn-primary" onclick="saveProfile()">儲存變更</button>
         </div>
         <div style="background:var(--white);border:1px solid var(--gray200);border-radius:var(--rl);padding:1.75rem;max-width:460px;box-shadow:var(--sh);margin-top:1.25rem">
@@ -556,7 +556,8 @@ async function afterLogin(authUser) {
   var { data: profile } = await sb.from('users').select('*').eq('id', authUser.id).single();
   var name = (profile && profile.name) || (authUser.user_metadata && authUser.user_metadata.name) || authUser.email.split('@')[0];
   var phone = (profile && profile.phone) || '';
-  curUser = { id: authUser.id, name: name, email: authUser.email };
+  var lineDisplayName = (profile && profile.line_display_name) || null;
+  curUser = { id: authUser.id, name: name, email: authUser.email, line_display_name: lineDisplayName };
   document.getElementById('av').textContent = name[0].toUpperCase();
   document.getElementById('uName').textContent = name;
   document.getElementById('uEmail').textContent = authUser.email;
@@ -564,11 +565,13 @@ async function afterLogin(authUser) {
   document.getElementById('pEmail').value = authUser.email;
   var pPhone = document.getElementById('pPhone');
   if (pPhone) pPhone.value = phone;
+  renderLineBindStatus(lineDisplayName);
   var hr = new Date().getHours();
   var greet = hr < 12 ? '早安' : hr < 17 ? '午安' : '晚安';
   document.getElementById('welcomeMsg').textContent = greet + '，' + name.split(' ')[0] + ' 👋';
   await renderProjects();
   await renderHistory();
+  await handleLineCallback();
   navigate('/dashboard');
   toast('✅ 歡迎回來，' + name.split(' ')[0] + '！');
 }
@@ -580,6 +583,71 @@ async function logout() {
   document.getElementById('loginPwd').value = '';
   navigate('/login');
   toast('已登出');
+}
+
+function renderLineBindStatus(displayName) {
+  var el = document.getElementById('lineBindStatus');
+  if (!el) return;
+  if (displayName) {
+    el.innerHTML = '<div style="display:flex;align-items:center;gap:.75rem;padding:.6rem .9rem;background:#f0fdf4;border:1.5px solid #86efac;border-radius:8px">' +
+      '<span style="font-size:1.1rem">✅</span>' +
+      '<span style="font-size:.9rem;font-weight:600;color:#15803d">' + displayName + '</span>' +
+      '<button onclick="unbindLine()" style="margin-left:auto;font-size:.75rem;color:#dc2626;background:none;border:1px solid #fca5a5;cursor:pointer;padding:.2rem .5rem;border-radius:4px">解除綁定</button>' +
+      '</div>';
+  } else {
+    el.innerHTML = '<button onclick="bindLine()" style="display:flex;align-items:center;gap:.5rem;background:#06C755;color:#fff;border:none;padding:.65rem 1.1rem;border-radius:8px;font-size:.88rem;font-weight:600;cursor:pointer">' +
+      '<span>💚</span> 綁定 LINE 帳號</button>';
+  }
+}
+
+function bindLine() {
+  var params = new URLSearchParams({
+    response_type: 'code',
+    client_id: '2010277326',
+    redirect_uri: 'https://devstudio-site-seven.vercel.app/member',
+    state: 'line_bind',
+    scope: 'profile',
+  });
+  window.location.href = 'https://access.line.me/oauth2/v2.1/authorize?' + params.toString();
+}
+
+async function unbindLine() {
+  if (!curUser) return;
+  var { error } = await sb.from('users').update({ line_uid: null, line_display_name: null }).eq('id', curUser.id);
+  if (error) { toast('⚠️ 解除失敗：' + error.message); return; }
+  curUser.line_display_name = null;
+  renderLineBindStatus(null);
+  toast('✅ LINE 已解除綁定');
+}
+
+async function handleLineCallback() {
+  var params = new URLSearchParams(window.location.search);
+  var code = params.get('code');
+  var state = params.get('state');
+  if (!code || state !== 'line_bind') return;
+  window.history.replaceState({}, '', '/member');
+  var { data: { session } } = await sb.auth.getSession();
+  if (!session) { toast('⚠️ 請先登入再綁定 LINE'); return; }
+  toast('🔄 正在綁定 LINE...');
+  try {
+    var res = await fetch(SUPABASE_URL + '/functions/v1/line-connect', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + session.access_token,
+        'apikey': SUPABASE_ANON_KEY,
+      },
+      body: JSON.stringify({ code: code }),
+    });
+    var data = await res.json();
+    if (data.error) throw new Error(data.error);
+    curUser.line_display_name = data.line_display_name;
+    renderLineBindStatus(data.line_display_name);
+    navigate('/profile');
+    toast('✅ LINE 綁定成功：' + data.line_display_name);
+  } catch (e) {
+    toast('⚠️ LINE 綁定失敗：' + e.message);
+  }
 }
 
 async function saveProfile() {
