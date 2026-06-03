@@ -241,8 +241,6 @@ input:focus,textarea:focus,select:focus{border-color:var(--blue);background:var(
       <p>客戶會員後台</p>
     </div>
 
-    <div class="err-msg" id="errMsg">⚠️ 帳號或密碼錯誤，請重試</div>
-
     <div class="social-btns">
       <button class="social-btn google" onclick="socialLogin('Google')">
         <div class="sicon">G</div>使用 Google 帳號登入
@@ -250,20 +248,6 @@ input:focus,textarea:focus,select:focus{border-color:var(--blue);background:var(
       <button class="social-btn line" onclick="socialLogin('Line')">
         <div class="sicon">L</div>使用 Line 帳號登入
       </button>
-    </div>
-
-    <div class="divider-row">或使用 Email 登入</div>
-
-    <div class="fg"><label>電子郵件</label>
-      <input type="email" id="loginEmail" placeholder="you@example.com">
-    </div>
-    <div class="fg"><label>密碼</label>
-      <input type="password" id="loginPwd" placeholder="••••••••"
-        onkeydown="if(event.key==='Enter')doLogin()">
-    </div>
-    <button class="btn-full" onclick="doLogin()">登入</button>
-    <div style="text-align:center;margin-top:.75rem">
-      <a href="#" onclick="forgotPassword();return false" style="font-size:.8rem;color:var(--blue);text-decoration:none">忘記密碼？</a>
     </div>
   </div>
 </div>
@@ -526,28 +510,6 @@ function navigate(path) {
   }
 }
 
-// ── 登入 ──
-async function doLogin() {
-  var email = document.getElementById('loginEmail').value.trim();
-  var pwd = document.getElementById('loginPwd').value;
-  var errEl = document.getElementById('errMsg');
-  errEl.style.display = 'none';
-  var loginBtn = document.querySelector('.btn-full');
-  loginBtn.textContent = '登入中...'; loginBtn.disabled = true;
-  var { data, error } = await sb.auth.signInWithPassword({ email: email, password: pwd });
-  loginBtn.textContent = '登入'; loginBtn.disabled = false;
-  if (error) { errEl.style.display = 'block'; return; }
-  await afterLogin(data.user);
-}
-
-async function forgotPassword() {
-  var email = document.getElementById('loginEmail').value.trim();
-  if (!email) { toast('⚠️ 請先輸入 Email'); return; }
-  var { error } = await sb.auth.resetPasswordForEmail(email);
-  if (error) { toast('⚠️ 發送失敗：' + error.message); return; }
-  toast('📧 密碼重設信已發送，請查收 Email');
-}
-
 async function socialLogin(type) {
   if (type === 'Google') {
     var { error } = await sb.auth.signInWithOAuth({
@@ -568,7 +530,7 @@ async function socialLogin(type) {
     window.location.href = 'https://access.line.me/oauth2/v2.1/authorize?' + params.toString();
     return;
   }
-  toast('⚠️ ' + type + ' 登入即將開放，請使用 Email 登入');
+  toast('⚠️ 不支援的登入方式');
 }
 
 async function afterLogin(authUser) {
@@ -598,8 +560,6 @@ async function afterLogin(authUser) {
 async function logout() {
   await sb.auth.signOut({ scope: 'global' });
   curUser = null;
-  document.getElementById('loginEmail').value = '';
-  document.getElementById('loginPwd').value = '';
   navigate('/login');
   toast('已登出');
 }
