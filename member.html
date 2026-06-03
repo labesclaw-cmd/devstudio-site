@@ -557,6 +557,17 @@ async function socialLogin(type) {
     if (error) toast('⚠️ Google 登入失敗：' + error.message);
     return;
   }
+  if (type === 'Line') {
+    var params = new URLSearchParams({
+      response_type: 'code',
+      client_id: '2010277326',
+      redirect_uri: 'https://labesclaw-cmd.github.io/devstudio-site/member.html',
+      state: 'line_login',
+      scope: 'profile openid email',
+    });
+    window.location.href = 'https://access.line.me/oauth2/v2.1/authorize?' + params.toString();
+    return;
+  }
   toast('⚠️ ' + type + ' 登入即將開放，請使用 Email 登入');
 }
 
@@ -612,7 +623,7 @@ function bindLine() {
   var params = new URLSearchParams({
     response_type: 'code',
     client_id: '2010277326',
-    redirect_uri: 'https://devstudio-site-seven.vercel.app/member',
+    redirect_uri: 'https://labesclaw-cmd.github.io/devstudio-site/member.html',
     state: 'line_bind',
     scope: 'profile',
   });
@@ -632,8 +643,30 @@ async function handleLineCallback() {
   var params = new URLSearchParams(window.location.search);
   var code = params.get('code');
   var state = params.get('state');
-  if (!code || state !== 'line_bind') return;
-  window.history.replaceState({}, '', '/member');
+  if (!code || (state !== 'line_bind' && state !== 'line_login')) return;
+  window.history.replaceState({}, '', window.location.pathname);
+
+  if (state === 'line_login') {
+    toast('🔄 正在 LINE 登入...');
+    try {
+      var res = await fetch(SUPABASE_URL + '/functions/v1/line-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'apikey': SUPABASE_ANON_KEY },
+        body: JSON.stringify({ code: code }),
+      });
+      var data = await res.json();
+      if (data.error) throw new Error(data.error);
+      var { error: sessionError } = await sb.auth.setSession({
+        access_token: data.access_token,
+        refresh_token: data.refresh_token,
+      });
+      if (sessionError) throw sessionError;
+    } catch (e) {
+      toast('⚠️ LINE 登入失敗：' + e.message);
+    }
+    return;
+  }
+
   var { data: { session } } = await sb.auth.getSession();
   if (!session) { toast('⚠️ 請先登入再綁定 LINE'); return; }
   toast('🔄 正在綁定 LINE...');
@@ -691,7 +724,7 @@ async function changePassword() {
 
 // ── 渲染專案 ──
 async function renderProjects() {
-  var { data: projects } = await sb.from('projects').select('*');
+  var { data: projects } = await sb.from('projects').select('*').eq('client_id', curUser.id);
   allProjects = projects || [];
   var total = allProjects.length;
   var live = allProjects.filter(function(p) { return p.status === 'live'; }).length;
