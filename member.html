@@ -548,7 +548,15 @@ async function forgotPassword() {
   toast('📧 密碼重設信已發送，請查收 Email');
 }
 
-function socialLogin(type) {
+async function socialLogin(type) {
+  if (type === 'Google') {
+    var { error } = await sb.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: window.location.origin + window.location.pathname }
+    });
+    if (error) toast('⚠️ Google 登入失敗：' + error.message);
+    return;
+  }
   toast('⚠️ ' + type + ' 登入即將開放，請使用 Email 登入');
 }
 
