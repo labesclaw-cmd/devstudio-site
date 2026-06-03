@@ -661,6 +661,7 @@ async function handleLineCallback() {
         refresh_token: data.refresh_token,
       });
       if (sessionError) throw sessionError;
+      if (data.is_new_user) toast('🎉 歡迎加入 DevStudio，' + data.line_display_name + '！');
     } catch (e) {
       toast('⚠️ LINE 登入失敗：' + e.message);
     }
