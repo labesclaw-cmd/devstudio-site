@@ -1038,7 +1038,7 @@ function goMember(e){
 // 頁面載入時檢查登入狀態
 checkLoginState();
 
-// 已登入則預填表單姓名/電話，LINE 用戶隱藏 email 欄
+// 已登入則預填表單姓名/email/電話，LINE 用戶隱藏 email 欄
 (function prefillFormFromSession(){
   try{
     var token=localStorage.getItem('sb-dnpnjcjzwxrhopqvyluz-auth-token');
@@ -1055,7 +1055,17 @@ checkLoginState();
       emailEl.placeholder='（LINE 帳號無需填寫 Email）';
       emailEl.disabled=true;
       emailEl.value='';
+    } else if(emailEl&&!emailEl.value&&u.email){
+      emailEl.value=u.email;
     }
+    // 非同步補填電話（從 public.users 查）
+    fetch('https://dnpnjcjzwxrhopqvyluz.supabase.co/rest/v1/users?select=phone&id=eq.'+u.id,{
+      headers:{'apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRucG5qY2p6d3hyaG9wcXZ5bHV6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg5NDYyODQsImV4cCI6MjA2NDUyMjI4NH0.3WOxnqCaIiV6E9sTXbnmtOrm91_oDy_tghkL67hwJW4','Authorization':'Bearer '+d.access_token}
+    }).then(function(r){return r.json();}).then(function(rows){
+      if(!rows||!rows[0]||!rows[0].phone) return;
+      var phoneEl=document.getElementById('f-phone');
+      if(phoneEl&&!phoneEl.value) phoneEl.value=rows[0].phone;
+    }).catch(function(){});
   }catch(e){}
 })();
 
