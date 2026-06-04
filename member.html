@@ -526,7 +526,7 @@ async function socialLogin(type) {
       redirect_uri: 'https://devstudio-site-seven.vercel.app/member',
       state: 'line_login',
       scope: 'profile openid email',
-      prompt: 'consent',
+      prompt: 'login',
     });
     window.location.href = 'https://access.line.me/oauth2/v2.1/authorize?' + params.toString();
     return;
