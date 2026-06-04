@@ -278,6 +278,7 @@ input:focus,textarea:focus,select:focus{border-color:var(--blue);background:var(
         <div class="nav-item" onclick="go('/profile')"><span class="ni">👤</span>個人資料</div>
       </nav>
       <div class="sidebar-foot">
+        <a href="https://devstudio-site-seven.vercel.app/" target="_blank" style="display:flex;align-items:center;gap:.5rem;font-size:.85rem;color:var(--text3);text-decoration:none;margin-bottom:.6rem;transition:color .15s" onmouseover="this.style.color='var(--blue)'" onmouseout="this.style.color='var(--text3)'">🏡 回到官網首頁</a>
         <div class="logout-btn" onclick="logout()">🚪 登出帳號</div>
       </div>
     </aside>
@@ -312,9 +313,12 @@ input:focus,textarea:focus,select:focus{border-color:var(--blue);background:var(
 
       <!-- 我的專案 -->
       <div class="view" id="v-projects">
-        <div class="page-header">
-          <h2>我的專案</h2>
-          <p>您所有已購買的網頁與開發服務</p>
+        <div class="page-header" style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:.75rem">
+          <div>
+            <h2>我的專案</h2>
+            <p>您所有已購買的網頁與開發服務</p>
+          </div>
+          <button class="btn-primary" onclick="openNewInquiryModal()" style="white-space:nowrap;align-self:center">＋ 新建專案</button>
         </div>
         <div class="projects-grid" id="grid-projects"></div>
       </div>
@@ -430,6 +434,48 @@ input:focus,textarea:focus,select:focus{border-color:var(--blue);background:var(
     <div class="modal-foot" id="mFoot">
       <button class="btn-secondary" onclick="closeModal()">取消</button>
       <button class="btn-primary" id="mNextBtn" onclick="modalNext()">下一步 →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 新建專案 Modal ══ -->
+<div class="overlay" id="newInquiryModal">
+  <div class="modal">
+    <div class="modal-head">
+      <div><h3>🚀 新建專案需求</h3><div class="sub">填寫後我們會盡快與您聯絡</div></div>
+      <button class="mc-btn" onclick="closeNewInquiryModal()">✕</button>
+    </div>
+    <div class="modal-body" id="niBody">
+      <div class="fg">
+        <label>姓名 *</label>
+        <input type="text" id="ni-name" placeholder="王小明">
+      </div>
+      <div class="fg" id="ni-email-wrap">
+        <label>電子郵件 *</label>
+        <input type="email" id="ni-email" placeholder="you@example.com">
+      </div>
+      <div class="fg">
+        <label>聯絡電話</label>
+        <input type="tel" id="ni-phone" placeholder="0912-000-000">
+      </div>
+      <div class="fg">
+        <label>專案類型 *</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:.5rem;margin-top:.25rem" id="ni-type-grid">
+          <div class="type-card" data-val="website" onclick="niPickType(this)"><div class="tci">🌐</div><div class="tcl">個人官方網站</div></div>
+          <div class="type-card" data-val="game" onclick="niPickType(this)"><div class="tci">⚔️</div><div class="tcl">遊戲私服官網</div></div>
+          <div class="type-card" data-val="app" onclick="niPickType(this)"><div class="tci">📱</div><div class="tcl">APP 開發</div></div>
+          <div class="type-card" data-val="system" onclick="niPickType(this)"><div class="tci">⚙️</div><div class="tcl">應用程序開發</div></div>
+        </div>
+        <input type="hidden" id="ni-type">
+      </div>
+      <div class="fg">
+        <label>需求說明</label>
+        <textarea id="ni-desc" rows="4" placeholder="請描述您的專案需求，例如：希望製作一個遊戲私服官網，包含公告系統和玩家排行榜..."></textarea>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-secondary" onclick="closeNewInquiryModal()">取消</button>
+      <button class="btn-primary" id="niSubmitBtn" onclick="submitNewInquiry()">送出需求 →</button>
     </div>
   </div>
 </div>
@@ -787,6 +833,77 @@ function closeModal() {
   document.getElementById('aiOut').classList.remove('show');
   document.getElementById('aiOut').style.display = 'none';
   document.getElementById('aiLoading').style.display = 'none';
+}
+
+// ── 新建專案 Modal ──
+function openNewInquiryModal() {
+  var m = document.getElementById('newInquiryModal');
+  // 預填已知資料
+  if (curUser) {
+    var nameEl = document.getElementById('ni-name');
+    if (nameEl && !nameEl.value && curUser.name) nameEl.value = curUser.name;
+    var isSynthetic = curUser.email && curUser.email.endsWith('@line.devstudio');
+    var emailWrap = document.getElementById('ni-email-wrap');
+    var emailEl = document.getElementById('ni-email');
+    if (isSynthetic) {
+      if (emailWrap) emailWrap.style.display = 'none';
+    } else {
+      if (emailEl && !emailEl.value && curUser.email) emailEl.value = curUser.email;
+    }
+    // 電話從 profile 補填
+    sb.from('users').select('phone').eq('id', curUser.id).single().then(function(r) {
+      var phoneEl = document.getElementById('ni-phone');
+      if (phoneEl && !phoneEl.value && r.data && r.data.phone) phoneEl.value = r.data.phone;
+    });
+  }
+  m.classList.add('open');
+}
+function closeNewInquiryModal() {
+  document.getElementById('newInquiryModal').classList.remove('open');
+}
+function niPickType(el) {
+  document.querySelectorAll('#ni-type-grid .type-card').forEach(function(c) { c.classList.remove('on'); });
+  el.classList.add('on');
+  document.getElementById('ni-type').value = el.dataset.val;
+}
+async function submitNewInquiry() {
+  var name = document.getElementById('ni-name').value.trim();
+  var email = document.getElementById('ni-email').value.trim();
+  var phone = document.getElementById('ni-phone').value.trim();
+  var type = document.getElementById('ni-type').value;
+  var desc = document.getElementById('ni-desc').value.trim();
+  var isSynthetic = curUser && curUser.email && curUser.email.endsWith('@line.devstudio');
+  if (!name || (!email && !isSynthetic) || !type) {
+    toast('⚠️ 請填寫姓名、Email 並選擇專案類型'); return;
+  }
+  var btn = document.getElementById('niSubmitBtn');
+  btn.textContent = '送出中...'; btn.disabled = true;
+  try {
+    var { data: { session } } = await sb.auth.getSession();
+    var payload = {
+      action: 'submit_inquiry',
+      client_id: curUser ? curUser.id : undefined,
+      name: name, phone: phone, email: email, type: type, description: desc
+    };
+    var res = await fetch(SUPABASE_URL + '/functions/v1/devstudio-webhook', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': session ? 'Bearer ' + session.access_token : '' },
+      body: JSON.stringify(payload)
+    });
+    if (res.ok) {
+      closeNewInquiryModal();
+      toast('🎉 需求已送出！我們會盡快與您聯絡');
+      // 清空表單
+      ['ni-name','ni-email','ni-phone','ni-desc'].forEach(function(id) {
+        var el = document.getElementById(id); if (el) el.value = '';
+      });
+      document.getElementById('ni-type').value = '';
+      document.querySelectorAll('#ni-type-grid .type-card').forEach(function(c) { c.classList.remove('on'); });
+    } else {
+      toast('❌ 送出失敗，請稍後再試');
+    }
+  } catch(e) { toast('❌ 網路錯誤，請稍後再試'); }
+  btn.textContent = '送出需求 →'; btn.disabled = false;
 }
 function pickType(el) {
   document.querySelectorAll('.type-card').forEach(function(c) { c.classList.remove('on'); });
