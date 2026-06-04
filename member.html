@@ -535,6 +535,18 @@ async function socialLogin(type) {
 }
 
 async function afterLogin(authUser) {
+  // 靜默補連：若有同電話的匿名詢問單，自動歸位到此帳號
+  try {
+    var { data: { session: _s } } = await sb.auth.getSession();
+    if (_s) {
+      fetch(SUPABASE_URL + '/functions/v1/devstudio-webhook', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + _s.access_token },
+        body: JSON.stringify({ action: 'link_inquiries_by_phone', client_id: authUser.id }),
+      }).catch(function(){});
+    }
+  } catch(e) {}
+
   var { data: profile } = await sb.from('users').select('*').eq('id', authUser.id).single();
   var name = (profile && profile.name) || (authUser.user_metadata && authUser.user_metadata.name) || authUser.email.split('@')[0];
   var phone = (profile && profile.phone) || '';

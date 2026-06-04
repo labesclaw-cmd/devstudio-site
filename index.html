@@ -1038,12 +1038,40 @@ function goMember(e){
 // 頁面載入時檢查登入狀態
 checkLoginState();
 
+// 已登入則預填表單姓名/電話，LINE 用戶隱藏 email 欄
+(function prefillFormFromSession(){
+  try{
+    var token=localStorage.getItem('sb-dnpnjcjzwxrhopqvyluz-auth-token');
+    if(!token) return;
+    var d=JSON.parse(token);
+    if(!d.user||!d.access_token) return;
+    var u=d.user;
+    var uname=(u.user_metadata&&(u.user_metadata.full_name||u.user_metadata.name))||'';
+    var isSynthetic=u.email&&u.email.endsWith('@line.devstudio');
+    var nameEl=document.getElementById('f-name');
+    if(nameEl&&!nameEl.value&&uname) nameEl.value=uname;
+    var emailEl=document.getElementById('f-email');
+    if(emailEl&&isSynthetic){
+      emailEl.placeholder='（LINE 帳號無需填寫 Email）';
+      emailEl.disabled=true;
+      emailEl.value='';
+    }
+  }catch(e){}
+})();
+
 document.getElementById('contactForm').addEventListener('submit',async function(e){
   e.preventDefault();
+  // 取得已登入用戶 ID（若有）
+  var loggedInClientId=null;
+  try{
+    var _t=localStorage.getItem('sb-dnpnjcjzwxrhopqvyluz-auth-token');
+    if(_t){var _d=JSON.parse(_t);if(_d.user&&_d.access_token) loggedInClientId=_d.user.id;}
+  }catch(e){}
+
   var name=document.getElementById('f-name').value.trim();
   var email=document.getElementById('f-email').value.trim();
   var type=document.getElementById('f-type').value;
-  if(!name||!email||!type){alert('請填寫姓名、Email 並選擇專案類型！');return;}
+  if(!name||(!email&&!loggedInClientId)||!type){alert('請填寫姓名、Email 並選擇專案類型！');return;}
 
   var btn=this.querySelector('.form-submit');
   btn.textContent='上傳圖片中...';btn.disabled=true;
@@ -1077,6 +1105,7 @@ document.getElementById('contactForm').addEventListener('submit',async function(
   btn.textContent='傳送中...';
   var payload={
     action:'submit_inquiry',
+    client_id:loggedInClientId||undefined,
     name:name,
     phone:document.getElementById('f-phone').value,
     email:email,
