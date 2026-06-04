@@ -1131,7 +1131,7 @@ document.getElementById('contactForm').addEventListener('submit',async function(
   try{
     var res=await fetch('https://dnpnjcjzwxrhopqvyluz.supabase.co/functions/v1/devstudio-webhook',{
       method:'POST',
-      headers:{'Content-Type':'application/json'},
+      headers:{'Content-Type':'application/json','Authorization':'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRucG5qY2p6d3hyaG9wcXZ5bHV6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5NTQxMzQsImV4cCI6MjA5NTUzMDEzNH0.hbhyYGmxwVgh3kQD-v60OPQ8VlRghkJIKzQ4UPVWBAE','apikey':'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRucG5qY2p6d3hyaG9wcXZ5bHV6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5NTQxMzQsImV4cCI6MjA5NTUzMDEzNH0.hbhyYGmxwVgh3kQD-v60OPQ8VlRghkJIKzQ4UPVWBAE'},
       body:JSON.stringify(payload)
     });
     var data=await res.json();
