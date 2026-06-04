@@ -318,7 +318,7 @@ input:focus,textarea:focus,select:focus{border-color:var(--blue);background:var(
             <h2>我的專案</h2>
             <p>您所有已購買的網頁與開發服務</p>
           </div>
-          <a href="https://devstudio-site-seven.vercel.app/#contact" target="_blank" class="btn-primary" style="white-space:nowrap;align-self:center;text-decoration:none">＋ 新建專案</a>
+          <button class="btn-primary" onclick="openNewInquiryModal()" style="white-space:nowrap;align-self:center">＋ 新建專案</button>
         </div>
         <div class="projects-grid" id="grid-projects"></div>
       </div>
@@ -470,7 +470,31 @@ input:focus,textarea:focus,select:focus{border-color:var(--blue);background:var(
       </div>
       <div class="fg">
         <label>需求說明</label>
-        <textarea id="ni-desc" rows="4" placeholder="請描述您的專案需求，例如：希望製作一個遊戲私服官網，包含公告系統和玩家排行榜..."></textarea>
+        <textarea id="ni-desc" rows="3" placeholder="請描述您的專案需求，例如：希望製作一個遊戲私服官網，包含公告系統和玩家排行榜..."></textarea>
+      </div>
+      <div class="fg">
+        <label>功能需求 <span style="font-weight:400;font-size:.76rem;color:var(--text3)">需要哪些功能模組</span></label>
+        <textarea id="ni-features" rows="2" placeholder="例如：會員登入、線上報名、金流串接、後台管理、LINE 通知..."></textarea>
+      </div>
+      <div class="fg">
+        <label>視覺風格</label>
+        <input type="text" id="ni-style" placeholder="例如：暗黑科技感、清新白底、企業正式風">
+        <input type="text" id="ni-ref" placeholder="參考網站網址（選填）https://..." style="margin-top:.4rem">
+      </div>
+      <div class="fg">
+        <label>預算範圍</label>
+        <select id="ni-budget">
+          <option value="">請選擇</option>
+          <option value="under2">2 萬以下</option>
+          <option value="2to5">2 ～ 5 萬</option>
+          <option value="5to10">5 ～ 10 萬</option>
+          <option value="above10">10 萬以上</option>
+          <option value="unknown">不確定，請提供建議</option>
+        </select>
+      </div>
+      <div class="fg">
+        <label>素材連結 <span style="font-weight:400;font-size:.76rem;color:var(--text3)">Logo、圖片、文件等</span></label>
+        <input type="text" id="ni-assets" placeholder="Google Drive / Dropbox 共用連結（選填）">
       </div>
     </div>
     <div class="modal-foot">
@@ -872,6 +896,11 @@ async function submitNewInquiry() {
   var phone = document.getElementById('ni-phone').value.trim();
   var type = document.getElementById('ni-type').value;
   var desc = document.getElementById('ni-desc').value.trim();
+  var features = document.getElementById('ni-features').value.trim();
+  var style = document.getElementById('ni-style').value.trim();
+  var ref = document.getElementById('ni-ref').value.trim();
+  var budget = document.getElementById('ni-budget').value;
+  var assets = document.getElementById('ni-assets').value.trim();
   var isSynthetic = curUser && curUser.email && curUser.email.endsWith('@line.devstudio');
   if (!name || (!email && !isSynthetic) || !type) {
     toast('⚠️ 請填寫姓名、Email 並選擇專案類型'); return;
@@ -880,10 +909,16 @@ async function submitNewInquiry() {
   btn.textContent = '送出中...'; btn.disabled = true;
   try {
     var { data: { session } } = await sb.auth.getSession();
+    var fullDesc = desc;
+    if (features) fullDesc += '\n\n【功能需求】' + features;
+    if (style) fullDesc += '\n\n【視覺風格】' + style;
+    if (ref) fullDesc += '\n參考網站：' + ref;
+    if (budget) fullDesc += '\n\n【預算範圍】' + budget;
+    if (assets) fullDesc += '\n\n【素材連結】' + assets;
     var payload = {
       action: 'submit_inquiry',
       client_id: curUser ? curUser.id : undefined,
-      name: name, phone: phone, email: email, type: type, description: desc
+      name: name, phone: phone, email: email, type: type, description: fullDesc
     };
     var res = await fetch(SUPABASE_URL + '/functions/v1/devstudio-webhook', {
       method: 'POST',
@@ -893,11 +928,11 @@ async function submitNewInquiry() {
     if (res.ok) {
       closeNewInquiryModal();
       toast('🎉 需求已送出！我們會盡快與您聯絡');
-      // 清空表單
-      ['ni-name','ni-email','ni-phone','ni-desc'].forEach(function(id) {
+      ['ni-name','ni-email','ni-phone','ni-desc','ni-features','ni-style','ni-ref','ni-assets'].forEach(function(id) {
         var el = document.getElementById(id); if (el) el.value = '';
       });
       document.getElementById('ni-type').value = '';
+      document.getElementById('ni-budget').value = '';
       document.querySelectorAll('#ni-type-grid .type-card').forEach(function(c) { c.classList.remove('on'); });
     } else {
       toast('❌ 送出失敗，請稍後再試');
