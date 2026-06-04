@@ -544,13 +544,19 @@ function confirmQuote() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRucG5qY2p6d3hyaG9wcXZ5bHV6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5NTQxMzQsImV4cCI6MjA5NTUzMDEzNH0.hbhyYGmxwVgh3kQD-v60OPQ8VlRghkJIKzQ4UPVWBAE' },
       body: JSON.stringify({ action: 'client_accept', seq: parseInt(p.seq) })
-    }).then(function() {
-      document.getElementById('confirmArea').style.display = 'none';
-      document.getElementById('confirmedMsg').style.display = 'block';
+    }).then(function(r) { return r.json(); }).then(function(d) {
+      if (d.success) {
+        document.getElementById('confirmArea').style.display = 'none';
+        document.getElementById('confirmedMsg').style.display = 'block';
+      } else {
+        btn.disabled = false;
+        btn.textContent = '✅ 確認接受報價';
+        alert('確認失敗：' + (d.error || '請稍後再試，或聯繫 DevStudio'));
+      }
     }).catch(function() {
-      // 即使失敗也顯示確認（避免讓客戶困惑）
-      document.getElementById('confirmArea').style.display = 'none';
-      document.getElementById('confirmedMsg').style.display = 'block';
+      btn.disabled = false;
+      btn.textContent = '✅ 確認接受報價';
+      alert('網路錯誤，請稍後再試');
     });
     return;
   }
