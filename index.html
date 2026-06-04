@@ -289,7 +289,7 @@ footer p{color:#94a3b8;font-size:.85rem}
       <li><a href="#contact">聯絡我們</a></li>
     </ul>
     <a href="#contact" class="nav-cta">免費諮詢</a>
-    <a href="member.html" class="nav-member" id="navMemberBtn" onclick="goMember(event)">👤 會員登入</a>
+    <a href="member.html" class="nav-member" id="navMemberBtn" onclick="goMember(event)">👤 會員註冊／登入</a>
   </div>
 </nav>
 
@@ -1024,7 +1024,7 @@ function checkLoginState(){
       btn.classList.add('logged-in');
       btn.title='點擊進入會員後台';
     } else {
-      btn.textContent='👤 會員登入';
+      btn.textContent='👤 會員註冊／登入';
       btn.classList.remove('logged-in');
     }
   }catch(e){}
