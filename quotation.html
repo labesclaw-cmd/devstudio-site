@@ -600,7 +600,7 @@ function switchType(t) {
       if (d.success) {
         render(d);
         // 已確認的報價單隱藏操作按鈕
-        if (d.status === 'client_accepted' || d.status === 'confirmed') {
+        if (d.status === 'client_accepted' || d.status === 'in_progress') {
           document.getElementById('confirmArea').style.display = 'none';
           document.getElementById('confirmedMsg').style.display = 'block';
         }
