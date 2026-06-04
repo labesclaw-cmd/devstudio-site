@@ -542,7 +542,7 @@ function confirmQuote() {
     btn.textContent = '確認中...';
     fetch(EDGE_FN, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRucG5qY2p6d3hyaG9wcXZ5bHV6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5NTQxMzQsImV4cCI6MjA5NTUzMDEzNH0.hbhyYGmxwVgh3kQD-v60OPQ8VlRghkJIKzQ4UPVWBAE' },
       body: JSON.stringify({ action: 'client_accept', seq: parseInt(p.seq) })
     }).then(function() {
       document.getElementById('confirmArea').style.display = 'none';
@@ -594,7 +594,7 @@ function switchType(t) {
     document.getElementById('clientBtns').style.display = '';
     fetch(EDGE_FN, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImRucG5qY2p6d3hyaG9wcXZ5bHV6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk5NTQxMzQsImV4cCI6MjA5NTUzMDEzNH0.hbhyYGmxwVgh3kQD-v60OPQ8VlRghkJIKzQ4UPVWBAE' },
       body: JSON.stringify({ action: 'get_quotation', seq: parseInt(p.seq) })
     }).then(function(r) { return r.json(); }).then(function(d) {
       if (d.success) {
